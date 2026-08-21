@@ -98,10 +98,10 @@ const characters: Character[] = [
   { id: "moko", name: "모코", title: "별빛 로봇", emoji: "🤖", power: "고장난 것을 고치기", intro: "작은 부품으로 놀라운 장치를 만들지.", accent: "#8eceef", accessory: "별빛 렌치", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/moko.png" },
   { id: "toto", name: "토토", title: "젤리 마법사", emoji: "🟣", power: "통통 변신", intro: "좁은 틈도, 높은 벽도 말랑하게 통과해.", accent: "#b894f6", accessory: "반짝 젤리병", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/toto.png" },
   { id: "piko", name: "피코", title: "씨앗 수집가", emoji: "🐦", power: "새 친구 부르기", intro: "노래로 숲과 하늘의 친구를 불러 모아.", accent: "#f3bf54", accessory: "노래 씨앗", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/piko.png" },
-  { id: "mom", name: "엄마", title: "마법 간식 연구가", emoji: "🧑‍🍳", power: "따뜻한 응원", intro: "어려운 길에서도 맛있는 아이디어를 찾아내.", accent: "#f49cba", accessory: "행운 앞치마", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/mom.png" },
-  { id: "dad", name: "아빠", title: "아이디어 공방장", emoji: "🧑‍🔧", power: "고치고 만들기", intro: "작은 부품도 멋진 모험 도구로 바꿔.", accent: "#78c7b3", accessory: "만능 드라이버", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/dad.png" },
+  { id: "mom", name: "서지연", title: "마법 간식 연구가 · 엄마", emoji: "🧑‍🍳", power: "따뜻한 응원", intro: "어려운 길에서도 맛있는 아이디어를 찾아내.", accent: "#f49cba", accessory: "행운 앞치마", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seojiyeon-family.png" },
+  { id: "dad", name: "고환석", title: "아이디어 공방장 · 아빠", emoji: "🧑‍🔧", power: "고치고 만들기", intro: "작은 부품도 멋진 모험 도구로 바꿔.", accent: "#78c7b3", accessory: "만능 드라이버", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/gohwanseok-family.png" },
   { id: "seochanmin", name: "서찬민", title: "별길 모험가", emoji: "🧑‍🚀", power: "빛나는 발자국", intro: "어두운 길에도 별빛으로 방향을 표시해.", accent: "#9cbbf4", accessory: "우주 지도", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seochanmin.png" },
-  { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "리듬 운동화", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin.png" },
+  { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "태권도 도복", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-family.png" },
   { id: "leegayoung", name: "이가영", title: "색깔 수집가", emoji: "🧑‍🎨", power: "무지개 스케치", intro: "새로운 색 하나로 세상을 바꿔 그려.", accent: "#d69ae8", accessory: "무지개 붓", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/leegayoung.png" },
   { id: "apple", name: "사과", title: "말랑 과일 용사", emoji: "🍎", power: "상큼 굴러가기", intro: "데굴데굴 굴러가며 숨은 문을 찾아내.", accent: "#f15e5e", accessory: "잎사귀 방패", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/apple.png" },
 ];
@@ -298,6 +298,7 @@ export default function Home() {
   const [hasAwardedCurrentOrder, setHasAwardedCurrentOrder] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState("");
+  const [badgeAward, setBadgeAward] = useState<(typeof badges)[number] | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
 
@@ -385,6 +386,11 @@ export default function Home() {
     setCelebrating(true);
     playCelebrationSound();
     celebrationTimerRef.current = window.setTimeout(() => setCelebrating(false), 2800);
+  };
+
+  const revealBadge = (badge: (typeof badges)[number]) => {
+    setBadgeAward(badge);
+    playCelebrationSound();
   };
 
   const updateAnswer = (value: string) => {
@@ -492,7 +498,7 @@ export default function Home() {
         const earnedBadge = badges.find((badge) => badge.target === nextTotal);
         setCompletedOrders(nextTotal);
         setHasAwardedCurrentOrder(true);
-        window.setTimeout(() => celebrate(earnedBadge ? `“${earnedBadge.title}” 배지를 얻었어!` : "10개의 아이디어 조각을 모두 모았어!"), 120);
+        window.setTimeout(() => earnedBadge ? revealBadge(earnedBadge) : celebrate("10개의 아이디어 조각을 모두 모았어!"), 120);
       } else {
         window.setTimeout(() => celebrate("10개의 아이디어 조각을 모두 모았어!"), 120);
       }
@@ -538,6 +544,22 @@ export default function Home() {
       }
     } catch {
       // A share sheet can be closed intentionally, so no error message is needed.
+    }
+  };
+
+  const shareBadgeCollection = async () => {
+    const unlocked = badges.filter((badge) => completedOrders >= badge.target);
+    const badgeNames = unlocked.length ? unlocked.map((badge) => badge.title).join(" · ") : "첫 주문서 배지에 도전 중";
+    const shareText = `고영빈이 게임 주문서 ${completedOrders}개를 완성하고 ${unlocked.length}/${badges.length}개의 성취 배지를 모았어! ${badgeNames}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "고영빈의 게임 배지 컬렉션", text: shareText, url: window.location.href });
+      } else {
+        await navigator.clipboard.writeText(`${shareText}\n${window.location.href}`);
+        toast("배지 자랑 문구와 링크를 복사했어. 카카오톡에 붙여 넣어 봐!");
+      }
+    } catch {
+      // Closing a native share sheet is an intentional action.
     }
   };
 
@@ -673,7 +695,8 @@ export default function Home() {
         )}
       </main>
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
-      {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
+      {badgeAward && <div className="badge-award-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-award-title"><div className="badge-award-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={`award-${piece.id}`} className="badge-award-spark" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size + 3}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<section className="badge-award-card" style={{ "--award-color": badgeAward.color } as CSSProperties}><span className="badge-award-kicker">NEW BADGE UNLOCKED</span><div className="giant-badge" aria-hidden="true"><span>{badgeAward.icon}</span></div><p>고영빈, 새로운 성취를 해냈어!</p><h2 id="badge-award-title">{badgeAward.title}</h2><b>{badgeAward.copy}</b><div><button type="button" onClick={() => { setBadgeAward(null); setBadgeOpen(true); }}><Medal size={18} /> 컬렉션 보기</button><button type="button" onClick={() => setBadgeAward(null)}>계속 만들기</button></div></section></div>}
+      {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><div className="badge-panel-actions"><button type="button" className="badge-share-button" onClick={shareBadgeCollection}><Share2 size={16} /> 카카오톡 공유</button><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></div></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
       {vaultOpen && <div className="vault-overlay" role="dialog" aria-modal="true" aria-labelledby="vault-title"><section className="vault-panel"><header><div><span className="eyebrow"><Archive size={15} /> IDEA VAULT</span><h2 id="vault-title">게임 아이디어 보관함</h2><p>이 기기 브라우저에 저장돼. 최대 30개까지 다시 열 수 있어.</p></div><button type="button" onClick={() => setVaultOpen(false)} aria-label="보관함 닫기"><X size={21} /></button></header>{vault.length === 0 ? <div className="vault-empty"><Archive size={34} /><b>아직 보관한 게임이 없어.</b><span>게임 주문서를 완성한 뒤 ‘보관함에 저장’을 눌러 봐!</span></div> : <div className="vault-list">{vault.map((idea) => <article key={idea.id}><div><span>{new Date(idea.savedAt).toLocaleDateString("ko-KR")}</span><b>{idea.title}</b><p>{idea.answers.filter(Boolean).length}/10개 아이디어 조각 · {idea.selectedCharacter === "custom" ? idea.customCharacter.name : characters.find((item) => item.id === idea.selectedCharacter)?.name ?? "게임 친구"}</p></div><div><button type="button" className="vault-load" onClick={() => loadFromVault(idea)}>다시 열기</button><button type="button" className="vault-delete" onClick={() => removeFromVault(idea.id)} aria-label={`${idea.title} 삭제`}><Trash2 size={17} /></button></div></article>)}</div>}</section></div>}
       <footer className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-6 text-xs font-bold tracking-wide text-[#68728c] sm:px-8 lg:px-12"><span>PIXEL QUEST WORKSHOP · YOUR IDEA IS THE MAP</span><span>MADE FOR YOUNG GAME CREATORS</span></footer>
     </div>
