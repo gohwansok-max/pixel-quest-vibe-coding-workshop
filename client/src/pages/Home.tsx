@@ -15,6 +15,7 @@ import {
   Gamepad2,
   Heart,
   Lightbulb,
+  Medal,
   Mic,
   MicOff,
   Palette,
@@ -90,6 +91,7 @@ declare global {
 
 const STORAGE_KEY = "pixel-quest-workshop-v2";
 const VAULT_KEY = "pixel-quest-idea-vault-v1";
+const BADGE_KEY = "pixel-quest-badge-collection-v1";
 
 const characters: Character[] = [
   { id: "nabi", name: "나비", title: "구름 탐험가", emoji: "🦊", power: "바람 길 찾기", intro: "높은 곳에 숨은 길을 먼저 발견해.", accent: "#ff8d78", accessory: "구름 나침반", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/nabi.png" },
@@ -107,16 +109,23 @@ const characters: Character[] = [
 const customEmojiOptions = ["✨", "🦖", "🐳", "🦊", "🐉", "🧁", "🚀", "🎮", "🍀", "🛼", "🦄", "🌈"];
 
 const followUpPrompts = [
-  { question: "그 장면에는 어떤 색, 날씨, 소리가 더 있으면 좋을까?", seed: "보랏빛 저녁에 별가루가 반짝여" },
-  { question: "그 능력은 언제 가장 웃기거나 멋지게 쓰일까?", seed: "친구를 도와줄 때만 더 강해져" },
-  { question: "그곳에만 있는 신기한 물건 하나를 더 만들어 볼까?", seed: "문을 열면 노래가 나오는 작은 열쇠" },
-  { question: "그 행동을 하면 화면에서 무엇이 움직이거나 반짝일까?", seed: "발자국이 무지개색으로 반짝여" },
-  { question: "친구가 ‘와!’ 할 때 어떤 깜짝 변화가 일어날까?", seed: "숨은 길이 하늘에 펼쳐져" },
-  { question: "그 문제를 풀 힌트는 어디에 숨어 있으면 재미있을까?", seed: "벽에 그려진 웃긴 그림 속에" },
-  { question: "그 보물을 얻으면 캐릭터가 무엇을 새롭게 할 수 있을까?", seed: "새로운 곳으로 날아갈 수 있어" },
-  { question: "처음 온 친구가 무서워하지 않게 누가 도와주면 좋을까?", seed: "작은 새 친구가 먼저 같이 해 봐" },
-  { question: "끝나는 장면에 누가 함께 있고, 어떤 기분이면 좋을까?", seed: "모든 친구가 웃으며 손을 흔들어" },
-  { question: "영상에서 제일 먼저 보여 주고 싶은 장면은 무엇일까?", seed: "숨은 방이 열리는 가장 신기한 순간" },
+  { question: "그 장면에는 어떤 색, 날씨, 소리가 더 있으면 좋을까?", examples: ["보랏빛 저녁에 별가루가 반짝여", "비 오는 날 구름 사이에 무지개가 떠", "문이 열릴 때 종소리가 들려"] },
+  { question: "그 능력은 언제 가장 웃기거나 멋지게 쓰일까?", examples: ["친구를 도와줄 때만 더 강해져", "재채기하면 숨은 문이 보여", "노래를 부르면 시간이 잠깐 멈춰"] },
+  { question: "그곳에만 있는 신기한 물건 하나를 더 만들어 볼까?", examples: ["문을 열면 노래가 나오는 작은 열쇠", "말을 걸면 길을 알려 주는 구름", "그림 속으로 들어가는 지도"] },
+  { question: "그 행동을 하면 화면에서 무엇이 움직이거나 반짝일까?", examples: ["발자국이 무지개색으로 반짝여", "구름이 통통 튀어 올라", "별들이 길을 따라 날아와"] },
+  { question: "친구가 ‘와!’ 할 때 어떤 깜짝 변화가 일어날까?", examples: ["숨은 길이 하늘에 펼쳐져", "마을 전체가 춤추기 시작해", "작은 새가 거대한 용으로 변해"] },
+  { question: "그 문제를 풀 힌트는 어디에 숨어 있으면 재미있을까?", examples: ["벽에 그려진 웃긴 그림 속에", "졸린 고양이의 꿈속에", "바람이 불 때만 보이는 글자에"] },
+  { question: "그 보물을 얻으면 캐릭터가 무엇을 새롭게 할 수 있을까?", examples: ["새로운 곳으로 날아갈 수 있어", "비밀 친구를 부를 수 있어", "아지트를 내 마음대로 꾸밀 수 있어"] },
+  { question: "처음 온 친구가 무서워하지 않게 누가 도와주면 좋을까?", examples: ["작은 새 친구가 먼저 같이 해 봐", "말랑한 로봇이 버튼을 보여 줘", "실수해도 웃으며 힌트를 주는 요정"] },
+  { question: "끝나는 장면에 누가 함께 있고, 어떤 기분이면 좋을까?", examples: ["모든 친구가 웃으며 손을 흔들어", "별빛 아래에서 축제가 열려", "처음 만난 친구와 다시 약속해"] },
+  { question: "영상에서 제일 먼저 보여 주고 싶은 장면은 무엇일까?", examples: ["숨은 방이 열리는 가장 신기한 순간", "고영빈이 번개 점프하는 순간", "친구들과 마지막 노래를 부르는 장면"] },
+];
+
+const badges = [
+  { id: "first", target: 1, icon: "🎖️", title: "첫 주문서", copy: "첫 번째 게임 이야기를 끝까지 완성했어!", color: "#f3bf54" },
+  { id: "three", target: 3, icon: "🧭", title: "아이디어 탐험가", copy: "서로 다른 세 개의 세계를 상상했어!", color: "#8eceef" },
+  { id: "five", target: 5, icon: "🛠️", title: "게임 공방장", copy: "다섯 개의 게임 주문서를 만든 멋진 제작자!", color: "#b6f23d" },
+  { id: "ten", target: 10, icon: "👑", title: "전설의 게임 제작자", copy: "열 개의 모험을 만든 진짜 게임 장인!", color: "#b894f6" },
 ];
 
 const fireworkPieces = Array.from({ length: 44 }, (_, index) => ({
@@ -277,13 +286,16 @@ export default function Home() {
   const [stage, setStage] = useState<Stage>("character");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(""));
-  const [selectedCharacter, setSelectedCharacter] = useState(characters[0].id);
+  const [selectedCharacter, setSelectedCharacter] = useState("goyoungbin");
   const [customCharacter, setCustomCharacter] = useState<CustomCharacter>({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
   const [hydrated, setHydrated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [listening, setListening] = useState(false);
   const [vault, setVault] = useState<SavedIdea[]>([]);
   const [vaultOpen, setVaultOpen] = useState(false);
+  const [badgeOpen, setBadgeOpen] = useState(false);
+  const [completedOrders, setCompletedOrders] = useState(0);
+  const [hasAwardedCurrentOrder, setHasAwardedCurrentOrder] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState("");
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -293,18 +305,21 @@ export default function Home() {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string; customCharacter: CustomCharacter }>;
+        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string; customCharacter: CustomCharacter; hasAwardedCurrentOrder: boolean }>;
         if (parsed.stage) setStage(parsed.stage);
         if (typeof parsed.step === "number") setStep(Math.min(Math.max(parsed.step, 0), questions.length - 1));
         if (Array.isArray(parsed.answers)) setAnswers(questions.map((_, index) => parsed.answers?.[index] ?? ""));
         if (characters.some((character) => character.id === parsed.selectedCharacter) || parsed.selectedCharacter === "custom") setSelectedCharacter(parsed.selectedCharacter as string);
         if (parsed.customCharacter?.name && parsed.customCharacter?.accent) setCustomCharacter(parsed.customCharacter);
+        if (parsed.hasAwardedCurrentOrder) setHasAwardedCurrentOrder(true);
       }
       const storedVault = window.localStorage.getItem(VAULT_KEY);
       if (storedVault) {
         const parsedVault = JSON.parse(storedVault) as SavedIdea[];
         if (Array.isArray(parsedVault)) setVault(parsedVault);
       }
+      const storedBadgeCount = Number(window.localStorage.getItem(BADGE_KEY) ?? "0");
+      if (Number.isFinite(storedBadgeCount) && storedBadgeCount >= 0) setCompletedOrders(Math.floor(storedBadgeCount));
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
     } finally {
@@ -319,13 +334,17 @@ export default function Home() {
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter, customCharacter }));
-  }, [answers, customCharacter, hydrated, selectedCharacter, stage, step]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter, customCharacter, hasAwardedCurrentOrder }));
+  }, [answers, customCharacter, hasAwardedCurrentOrder, hydrated, selectedCharacter, stage, step]);
 
   useEffect(() => {
     if (!hydrated) return;
     window.localStorage.setItem(VAULT_KEY, JSON.stringify(vault));
   }, [hydrated, vault]);
+
+  useEffect(() => {
+    if (hydrated) window.localStorage.setItem(BADGE_KEY, String(completedOrders));
+  }, [completedOrders, hydrated]);
 
   const allCharacters = useMemo(() => [
     ...characters,
@@ -468,7 +487,15 @@ export default function Home() {
     }
     if (step === questions.length - 1) {
       setStage("result");
-      window.setTimeout(() => celebrate("10개의 아이디어 조각을 모두 모았어!"), 120);
+      if (!hasAwardedCurrentOrder) {
+        const nextTotal = completedOrders + 1;
+        const earnedBadge = badges.find((badge) => badge.target === nextTotal);
+        setCompletedOrders(nextTotal);
+        setHasAwardedCurrentOrder(true);
+        window.setTimeout(() => celebrate(earnedBadge ? `“${earnedBadge.title}” 배지를 얻었어!` : "10개의 아이디어 조각을 모두 모았어!"), 120);
+      } else {
+        window.setTimeout(() => celebrate("10개의 아이디어 조각을 모두 모았어!"), 120);
+      }
     } else {
       setStep((current) => current + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -530,8 +557,9 @@ export default function Home() {
     setStage("character");
     setStep(0);
     setAnswers(Array(questions.length).fill(""));
-    setSelectedCharacter(characters[0].id);
+    setSelectedCharacter("goyoungbin");
     setCustomCharacter({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
+    setHasAwardedCurrentOrder(false);
     setCopied(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -544,7 +572,7 @@ export default function Home() {
           <img src="/manus-storage/pixel-quest-logo_0164f001.png" alt="" className="brand-logo" onError={(event) => { event.currentTarget.style.display = "none"; }} />
           <span><strong className="wordmark-custom">게임 주문서 공방</strong><small>PIXEL QUEST · VIBE CODING</small></span>
         </a>
-        <div className="header-tools"><button type="button" className="vault-trigger" onClick={() => setVaultOpen(true)}><Archive size={16} /> 보관함 <b>{vault.length}</b></button><div className="save-status" aria-live="polite"><span className="save-light" />{hydrated ? "자동 저장 중" : "작업대 준비 중"}</div></div>
+        <div className="header-tools"><button type="button" className="badge-trigger" onClick={() => setBadgeOpen(true)}><Medal size={16} /> 배지 <b>{badges.filter((badge) => completedOrders >= badge.target).length}/{badges.length}</b></button><button type="button" className="vault-trigger" onClick={() => setVaultOpen(true)}><Archive size={16} /> 보관함 <b>{vault.length}</b></button><div className="save-status" aria-live="polite"><span className="save-light" />{hydrated ? "자동 저장 중" : "작업대 준비 중"}</div></div>
       </header>
 
       <main id="top" className="relative z-10 mx-auto w-full max-w-[1440px] px-5 pb-12 sm:px-8 lg:px-12">
@@ -554,7 +582,7 @@ export default function Home() {
               <span className="eyebrow"><Sparkles size={15} fill="currentColor" /> CHARACTER BAY</span>
               <h1 id="character-title">너만의 <em>게임 친구</em>를<br />먼저 데려가자.</h1>
               <p>캐릭터는 정답이 아니야. 마음에 드는 친구를 골라 주인공으로 삼고, 네 이야기를 마음껏 들려줘.</p>
-              <div className="maker-persona"><Gamepad2 size={23} /><span><b>30년 경력 게임 개발자</b>가 네 상상을 듣고, 첫 번째 <code>index.html</code> 게임으로 바꿔 줄 거야.</span></div>
+              <div className="maker-persona"><Gamepad2 size={23} /><span><b>고영빈이 메인 주인공!</b> 30년 경력 게임 개발자가 영빈이의 상상을 첫 번째 <code>index.html</code> 게임으로 바꿔 줄 거야.</span></div>
               <div className="setup-quest-map" aria-label="게임 주문서 만들기 여정">
                 <span className="map-label">GAME ORDER PATH</span>
                 <ol>
@@ -628,7 +656,7 @@ export default function Home() {
                 <div className="question-intro"><span className="question-count">{question.number}</span><div><p className="question-kicker">{question.kicker}</p><h2>{question.question}</h2><p>{question.helper}</p><p className="workshop-cheer"><Sparkles size={14} /> 여기에는 이상한 생각, 웃긴 생각, 멋진 생각이 다 들어갈 수 있어!</p></div></div>
                 <div className="spark-bank"><span>생각 불씨를 눌러 시작해도 돼</span><div>{question.sparks.map((spark) => <button type="button" key={spark} onClick={() => useSpark(spark)}>{spark}</button>)}</div></div>
                 <label className="custom-answer"><span>네 이야기 적기</span><textarea value={answers[step]} onChange={(event) => updateAnswer(event.target.value)} placeholder={question.placeholder} rows={5} maxLength={320} /><button type="button" className="polish-answer-button" onClick={polishCurrentAnswer}><Sparkles size={16} /><b>말 다듬기</b></button><button type="button" className={`voice-input-button ${listening ? "listening" : ""}`} onClick={startVoiceInput} aria-label={listening ? "음성 입력 멈추기" : "음성으로 답변하기"}>{listening ? <MicOff size={18} /> : <Mic size={18} />}<b>{listening ? "듣는 중…" : "말로 적기"}</b></button><small>{answers[step].length}/320</small></label>
-                {shortAnswer && <aside className="follow-up-card" aria-live="polite"><span><Sparkles size={15} fill="currentColor" /> IDEA BUDDY</span><p><b>좋은 시작이야!</b> {followUp.question}</p><button type="button" onClick={() => useSpark(followUp.seed)}><Zap size={14} fill="currentColor" /> 힌트: {followUp.seed}</button></aside>}
+                {shortAnswer && <aside className="follow-up-card" aria-live="polite"><span><Sparkles size={15} fill="currentColor" /> IDEA BUDDY</span><p><b>좋은 시작이야!</b> {followUp.question}</p><small>마음에 드는 예시 하나를 눌러서 네 이야기로 바꿔 봐.</small><div className="follow-up-options">{followUp.examples.map((example, index) => <button type="button" key={example} onClick={() => useSpark(example)}><Zap size={14} fill="currentColor" /> {index === 0 ? "힌트" : "예시"}: {example}</button>)}</div></aside>}
                 <div className="card-footer"><button type="button" onClick={previous} className="nav-button back"><ArrowLeft size={18} /> {step === 0 ? "캐릭터" : "이전"}</button><p><b>{step + 1}</b> / 10 자동 저장됨</p><button type="button" onClick={next} className="nav-button next">{step === questions.length - 1 ? "주문서 완성" : "다음 장면"}{step === questions.length - 1 ? <Wand2 size={18} /> : <ArrowRight size={18} />}</button></div>
               </div>
               <div className="mini-note"><Heart size={17} /><span><b>창의력 규칙</b> 다른 게임과 비슷해도 괜찮고, 전혀 이상해도 좋아. 네가 재미있다면 그게 가장 좋은 시작이야.</span></div>
@@ -645,6 +673,7 @@ export default function Home() {
         )}
       </main>
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
+      {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
       {vaultOpen && <div className="vault-overlay" role="dialog" aria-modal="true" aria-labelledby="vault-title"><section className="vault-panel"><header><div><span className="eyebrow"><Archive size={15} /> IDEA VAULT</span><h2 id="vault-title">게임 아이디어 보관함</h2><p>이 기기 브라우저에 저장돼. 최대 30개까지 다시 열 수 있어.</p></div><button type="button" onClick={() => setVaultOpen(false)} aria-label="보관함 닫기"><X size={21} /></button></header>{vault.length === 0 ? <div className="vault-empty"><Archive size={34} /><b>아직 보관한 게임이 없어.</b><span>게임 주문서를 완성한 뒤 ‘보관함에 저장’을 눌러 봐!</span></div> : <div className="vault-list">{vault.map((idea) => <article key={idea.id}><div><span>{new Date(idea.savedAt).toLocaleDateString("ko-KR")}</span><b>{idea.title}</b><p>{idea.answers.filter(Boolean).length}/10개 아이디어 조각 · {idea.selectedCharacter === "custom" ? idea.customCharacter.name : characters.find((item) => item.id === idea.selectedCharacter)?.name ?? "게임 친구"}</p></div><div><button type="button" className="vault-load" onClick={() => loadFromVault(idea)}>다시 열기</button><button type="button" className="vault-delete" onClick={() => removeFromVault(idea.id)} aria-label={`${idea.title} 삭제`}><Trash2 size={17} /></button></div></article>)}</div>}</section></div>}
       <footer className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-6 text-xs font-bold tracking-wide text-[#68728c] sm:px-8 lg:px-12"><span>PIXEL QUEST WORKSHOP · YOUR IDEA IS THE MAP</span><span>MADE FOR YOUNG GAME CREATORS</span></footer>
     </div>
