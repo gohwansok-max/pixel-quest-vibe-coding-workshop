@@ -94,16 +94,16 @@ const VAULT_KEY = "pixel-quest-idea-vault-v1";
 const BADGE_KEY = "pixel-quest-badge-collection-v1";
 
 const characters: Character[] = [
+  { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "태권도 도복", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-final.png" },
+  { id: "dad", name: "고환석", title: "아이디어 공방장 · 아빠", emoji: "🧑‍🔧", power: "고치고 만들기", intro: "작은 부품도 멋진 모험 도구로 바꿔.", accent: "#78c7b3", accessory: "만능 드라이버", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/gohwanseok-family.png" },
+  { id: "mom", name: "서지연", title: "마법 간식 연구가 · 엄마", emoji: "🧑‍🍳", power: "따뜻한 응원", intro: "어려운 길에서도 맛있는 아이디어를 찾아내.", accent: "#f49cba", accessory: "행운 앞치마", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seojiyeon-family.png" },
+  { id: "seochanmin", name: "서찬민", title: "별길 모험가", emoji: "🧑‍🚀", power: "빛나는 발자국", intro: "어두운 길에도 별빛으로 방향을 표시해.", accent: "#9cbbf4", accessory: "우주 지도", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seochanmin.png" },
+  { id: "leegayoung", name: "이가영", title: "색깔 수집가", emoji: "🧑‍🎨", power: "무지개 스케치", intro: "새로운 색 하나로 세상을 바꿔 그려.", accent: "#d69ae8", accessory: "무지개 붓", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/leegayoung.png" },
+  { id: "apple", name: "사과", title: "말랑 과일 용사", emoji: "🍎", power: "상큼 굴러가기", intro: "데굴데굴 굴러가며 숨은 문을 찾아내.", accent: "#f15e5e", accessory: "잎사귀 방패", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/apple.png" },
   { id: "nabi", name: "나비", title: "구름 탐험가", emoji: "🦊", power: "바람 길 찾기", intro: "높은 곳에 숨은 길을 먼저 발견해.", accent: "#ff8d78", accessory: "구름 나침반", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/nabi.png" },
   { id: "moko", name: "모코", title: "별빛 로봇", emoji: "🤖", power: "고장난 것을 고치기", intro: "작은 부품으로 놀라운 장치를 만들지.", accent: "#8eceef", accessory: "별빛 렌치", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/moko.png" },
   { id: "toto", name: "토토", title: "젤리 마법사", emoji: "🟣", power: "통통 변신", intro: "좁은 틈도, 높은 벽도 말랑하게 통과해.", accent: "#b894f6", accessory: "반짝 젤리병", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/toto.png" },
   { id: "piko", name: "피코", title: "씨앗 수집가", emoji: "🐦", power: "새 친구 부르기", intro: "노래로 숲과 하늘의 친구를 불러 모아.", accent: "#f3bf54", accessory: "노래 씨앗", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/piko.png" },
-  { id: "mom", name: "서지연", title: "마법 간식 연구가 · 엄마", emoji: "🧑‍🍳", power: "따뜻한 응원", intro: "어려운 길에서도 맛있는 아이디어를 찾아내.", accent: "#f49cba", accessory: "행운 앞치마", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seojiyeon-family.png" },
-  { id: "dad", name: "고환석", title: "아이디어 공방장 · 아빠", emoji: "🧑‍🔧", power: "고치고 만들기", intro: "작은 부품도 멋진 모험 도구로 바꿔.", accent: "#78c7b3", accessory: "만능 드라이버", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/gohwanseok-family.png" },
-  { id: "seochanmin", name: "서찬민", title: "별길 모험가", emoji: "🧑‍🚀", power: "빛나는 발자국", intro: "어두운 길에도 별빛으로 방향을 표시해.", accent: "#9cbbf4", accessory: "우주 지도", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/seochanmin.png" },
-  { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "태권도 도복", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-family.png" },
-  { id: "leegayoung", name: "이가영", title: "색깔 수집가", emoji: "🧑‍🎨", power: "무지개 스케치", intro: "새로운 색 하나로 세상을 바꿔 그려.", accent: "#d69ae8", accessory: "무지개 붓", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/leegayoung.png" },
-  { id: "apple", name: "사과", title: "말랑 과일 용사", emoji: "🍎", power: "상큼 굴러가기", intro: "데굴데굴 굴러가며 숨은 문을 찾아내.", accent: "#f15e5e", accessory: "잎사귀 방패", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/apple.png" },
 ];
 
 const customEmojiOptions = ["✨", "🦖", "🐳", "🦊", "🐉", "🧁", "🚀", "🎮", "🍀", "🛼", "🦄", "🌈"];
@@ -654,6 +654,11 @@ export default function Home() {
             <aside className="quest-rail" aria-label="게임 주문서 진행 목록">
               <div className="rail-heading"><span className="status-dot" /><span>QUEST LOG</span></div>
               <div className="rail-character"><span>{character.emoji}</span><p><b>{character.name}</b>와 만드는 중<small>닫아도 자동 저장돼</small></p></div>
+              <div className="quest-xp-card" style={{ "--quest-progress": `${progress}%` } as CSSProperties} aria-label={`게임 주문서 진행률 ${step + 1} / 10`}>
+                <div><span>QUEST ENERGY</span><b>STAGE {String(step + 1).padStart(2, "0")}<small>/10</small></b></div>
+                <div className="quest-xp-track"><i /><span>{character.emoji}</span></div>
+                <ol>{questions.map((item, index) => <li key={item.label} className={index < step && answers[index] ? "cleared" : index === step ? "now" : ""}>{index < step && answers[index] ? <Check size={10} strokeWidth={4} /> : index + 1}</li>)}</ol>
+              </div>
               <ol>
                 {questions.map((item, index) => {
                   const isActive = index === step;
@@ -667,6 +672,7 @@ export default function Home() {
             <section className="quest-panel" aria-live="polite">
               <div className="mobile-quest-top"><span>{character.emoji} {character.name}의 이야기</span><button type="button" onClick={() => setStage("character")}>캐릭터 바꾸기</button></div>
               <div className="mobile-progress"><span>QUEST {String(step + 1).padStart(2, "0")} / 10</span><div><i style={{ width: `${progress}%` }} /></div></div>
+              <div className="mobile-game-progress" style={{ "--quest-progress": `${progress}%` } as CSSProperties} aria-label={`게임 주문서 진행률 ${step + 1} / 10`}><div className="mobile-game-track"><i /><span>{character.emoji}</span></div><b>STAGE {String(step + 1).padStart(2, "0")}</b><small>{questions.map((item, index) => <i key={item.label} className={index < step && answers[index] ? "cleared" : index === step ? "now" : ""} />)}</small></div>
               <div className="hero-strip compact-hero">
                 <div><span className="eyebrow"><Zap size={15} fill="currentColor" /> IDEA FORGE</span><h1>{character.name}의 이야기를<br /><em>네 방식으로</em> 만들어 봐.</h1><p>고른 예시는 시작점일 뿐이야. 마음대로 고치고, 섞고, 완전히 새로 써도 좋아.</p></div>
                 <div className="hero-character" style={{ "--character-accent": character.accent } as CSSProperties} aria-hidden="true"><span>{character.image && <img src={character.image} alt="" onError={(event) => { event.currentTarget.dataset.failed = "true"; event.currentTarget.style.display = "none"; }} />}<b>{character.emoji}</b></span><i>{character.accessory}</i></div>
