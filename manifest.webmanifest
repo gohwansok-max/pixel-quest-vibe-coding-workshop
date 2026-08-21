@@ -1,0 +1,19 @@
+{
+  "name": "게임 주문서 공방",
+  "short_name": "게임 주문서",
+  "description": "아이의 게임 상상을 index.html 게임 프롬프트로 만드는 창작 공방",
+  "lang": "ko-KR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf4df",
+  "theme_color": "#101b3d",
+  "icons": [
+    {
+      "src": "pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
