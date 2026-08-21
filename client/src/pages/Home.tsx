@@ -299,6 +299,7 @@ export default function Home() {
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState("");
   const [badgeAward, setBadgeAward] = useState<(typeof badges)[number] | null>(null);
+  const [youngbinWelcome, setYoungbinWelcome] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
 
@@ -481,9 +482,19 @@ export default function Home() {
     }
   };
 
-  const startQuest = () => {
+  const beginYoungbinQuest = () => {
+    setYoungbinWelcome(false);
     setStage("questions");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  };
+
+  const startQuest = () => {
+    if (selectedCharacter === "goyoungbin") {
+      setYoungbinWelcome(true);
+      playCelebrationSound();
+      return;
+    }
+    beginYoungbinQuest();
   };
 
   const next = () => {
@@ -700,6 +711,7 @@ export default function Home() {
           </section>
         )}
       </main>
+      {youngbinWelcome && <div className="youngbin-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="youngbin-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> JUMP MASTER ARRIVAL</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" /><img src="https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-final.png" alt="고영빈" /><b>⚡</b></div><p className="youngbin-welcome-small">번개 점프 마스터가 입장했어!</p><h2 id="youngbin-welcome-title">영빈아, 환영해!</h2><p className="youngbin-welcome-copy">고영빈이 게임 공방의 주인공이 됐어.<br />오늘은 어떤 신나는 세계를 만들어 볼까?</p><button type="button" onClick={beginYoungbinQuest}><Zap size={20} fill="currentColor" /> 번개 점프, 출발!</button><small>버튼을 누르면 첫 번째 아이디어 카드가 열려.</small></section></div>}
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
       {badgeAward && <div className="badge-award-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-award-title"><div className="badge-award-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={`award-${piece.id}`} className="badge-award-spark" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size + 3}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<section className="badge-award-card" style={{ "--award-color": badgeAward.color } as CSSProperties}><span className="badge-award-kicker">NEW BADGE UNLOCKED</span><div className="giant-badge" aria-hidden="true"><span>{badgeAward.icon}</span></div><p>고영빈, 새로운 성취를 해냈어!</p><h2 id="badge-award-title">{badgeAward.title}</h2><b>{badgeAward.copy}</b><div><button type="button" onClick={() => { setBadgeAward(null); setBadgeOpen(true); }}><Medal size={18} /> 컬렉션 보기</button><button type="button" onClick={() => setBadgeAward(null)}>계속 만들기</button></div></section></div>}
       {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><div className="badge-panel-actions"><button type="button" className="badge-share-button" onClick={shareBadgeCollection}><Share2 size={16} /> 카카오톡 공유</button><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></div></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
