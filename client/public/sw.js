@@ -1,4 +1,4 @@
-const CACHE_NAME = "pixel-quest-workshop-v1";
+const CACHE_NAME = "pixel-quest-workshop-v2";
 const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest", "./pwa-icon.svg"];
 
 self.addEventListener("install", (event) => {

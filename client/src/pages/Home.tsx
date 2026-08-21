@@ -2,7 +2,7 @@
  * Style reminder — Pixel Quest Workshop: a warm game-making workbench, child-led imagination,
  * and Arcade Lime reserved for active progression, confirmation, and success.
  */
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,6 +13,9 @@ import {
   Gamepad2,
   Heart,
   Lightbulb,
+  Mic,
+  MicOff,
+  Palette,
   RotateCcw,
   Share2,
   Sparkles,
@@ -45,6 +48,32 @@ type Character = {
   accessory: string;
 };
 
+type CustomCharacter = {
+  name: string;
+  accent: string;
+  emoji: string;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
+
 const STORAGE_KEY = "pixel-quest-workshop-v2";
 
 const characters: Character[] = [
@@ -52,6 +81,12 @@ const characters: Character[] = [
   { id: "moko", name: "모코", title: "별빛 로봇", emoji: "🤖", power: "고장난 것을 고치기", intro: "작은 부품으로 놀라운 장치를 만들지.", accent: "#8eceef", accessory: "별빛 렌치" },
   { id: "toto", name: "토토", title: "젤리 마법사", emoji: "🟣", power: "통통 변신", intro: "좁은 틈도, 높은 벽도 말랑하게 통과해.", accent: "#b894f6", accessory: "반짝 젤리병" },
   { id: "piko", name: "피코", title: "씨앗 수집가", emoji: "🐦", power: "새 친구 부르기", intro: "노래로 숲과 하늘의 친구를 불러 모아.", accent: "#f3bf54", accessory: "노래 씨앗" },
+  { id: "mom", name: "엄마", title: "마법 간식 연구가", emoji: "🧑‍🍳", power: "따뜻한 응원", intro: "어려운 길에서도 맛있는 아이디어를 찾아내.", accent: "#f49cba", accessory: "행운 앞치마" },
+  { id: "dad", name: "아빠", title: "아이디어 공방장", emoji: "🧑‍🔧", power: "고치고 만들기", intro: "작은 부품도 멋진 모험 도구로 바꿔.", accent: "#78c7b3", accessory: "만능 드라이버" },
+  { id: "seochanmin", name: "서찬민", title: "별길 모험가", emoji: "🧑‍🚀", power: "빛나는 발자국", intro: "어두운 길에도 별빛으로 방향을 표시해.", accent: "#9cbbf4", accessory: "우주 지도" },
+  { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "리듬 운동화" },
+  { id: "leegayoung", name: "이가영", title: "색깔 수집가", emoji: "🧑‍🎨", power: "무지개 스케치", intro: "새로운 색 하나로 세상을 바꿔 그려.", accent: "#d69ae8", accessory: "무지개 붓" },
+  { id: "apple", name: "사과", title: "말랑 과일 용사", emoji: "🍎", power: "상큼 굴러가기", intro: "데굴데굴 굴러가며 숨은 문을 찾아내.", accent: "#f15e5e", accessory: "잎사귀 방패" },
 ];
 
 const questions: Question[] = [
@@ -193,18 +228,22 @@ export default function Home() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(""));
   const [selectedCharacter, setSelectedCharacter] = useState(characters[0].id);
+  const [customCharacter, setCustomCharacter] = useState<CustomCharacter>({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
   const [hydrated, setHydrated] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [listening, setListening] = useState(false);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string }>;
+        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string; customCharacter: CustomCharacter }>;
         if (parsed.stage) setStage(parsed.stage);
         if (typeof parsed.step === "number") setStep(Math.min(Math.max(parsed.step, 0), questions.length - 1));
         if (Array.isArray(parsed.answers)) setAnswers(questions.map((_, index) => parsed.answers?.[index] ?? ""));
-        if (characters.some((character) => character.id === parsed.selectedCharacter)) setSelectedCharacter(parsed.selectedCharacter as string);
+        if (characters.some((character) => character.id === parsed.selectedCharacter) || parsed.selectedCharacter === "custom") setSelectedCharacter(parsed.selectedCharacter as string);
+        if (parsed.customCharacter?.name && parsed.customCharacter?.accent) setCustomCharacter(parsed.customCharacter);
       }
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -213,12 +252,18 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => () => speechRecognitionRef.current?.stop(), []);
+
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter }));
-  }, [answers, hydrated, selectedCharacter, stage, step]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter, customCharacter }));
+  }, [answers, customCharacter, hydrated, selectedCharacter, stage, step]);
 
-  const character = characters.find((item) => item.id === selectedCharacter) ?? characters[0];
+  const allCharacters = useMemo(() => [
+    ...characters,
+    { id: "custom", name: customCharacter.name.trim() || "나만의 주인공", title: "직접 만든 캐릭터", emoji: customCharacter.emoji || "✨", power: "내가 정한 능력", intro: "이야기와 색을 네가 직접 정했어.", accent: customCharacter.accent, accessory: "상상 노트" },
+  ], [customCharacter]);
+  const character = allCharacters.find((item) => item.id === selectedCharacter) ?? allCharacters[0];
   const question = questions[step];
   const prompt = useMemo(() => buildPrompt(answers, character), [answers, character]);
   const progress = stage === "result" ? 100 : stage === "questions" ? Math.round(((step + 1) / questions.length) * 100) : 0;
@@ -229,6 +274,47 @@ export default function Home() {
 
   const useSpark = (spark: string) => {
     updateAnswer(answers[step] ? `${answers[step]} ${spark}` : spark);
+  };
+
+  const updateCustomCharacter = (change: Partial<CustomCharacter>) => {
+    setCustomCharacter((current) => ({ ...current, ...change }));
+    setSelectedCharacter("custom");
+  };
+
+  const startVoiceInput = () => {
+    if (listening) {
+      speechRecognitionRef.current?.stop();
+      return;
+    }
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      toast("음성 입력은 Chrome 또는 Edge에서 가장 잘 작동해. 직접 적기도 가능해!");
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = "ko-KR";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const spokenText = Array.from(event.results).map((result) => result[0]?.transcript ?? "").join(" ").trim();
+      if (spokenText) {
+        setAnswers((current) => current.map((answer, index) => index === step ? `${answer}${answer.trim() ? " " : ""}${spokenText}` : answer));
+        toast("말한 내용을 적었어. 조금 고쳐도 좋아!");
+      }
+    };
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed") toast("마이크 사용을 허용해 주면 음성으로 적을 수 있어.");
+      else if (event.error !== "aborted") toast("말을 잘 듣지 못했어. 다시 눌러 천천히 말해 봐.");
+    };
+    recognition.onend = () => setListening(false);
+    speechRecognitionRef.current = recognition;
+    try {
+      recognition.start();
+      setListening(true);
+      toast("듣고 있어. 문장으로 편하게 말해 봐!");
+    } catch {
+      setListening(false);
+    }
   };
 
   const startQuest = () => {
@@ -304,6 +390,7 @@ export default function Home() {
     setStep(0);
     setAnswers(Array(questions.length).fill(""));
     setSelectedCharacter(characters[0].id);
+    setCustomCharacter({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
     setCopied(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -327,10 +414,18 @@ export default function Home() {
               <h1 id="character-title">너만의 <em>게임 친구</em>를<br />먼저 데려가자.</h1>
               <p>캐릭터는 정답이 아니야. 마음에 드는 친구를 골라 주인공으로 삼고, 네 이야기를 마음껏 들려줘.</p>
               <div className="maker-persona"><Gamepad2 size={23} /><span><b>30년 경력 게임 개발자</b>가 네 상상을 듣고, 첫 번째 <code>index.html</code> 게임으로 바꿔 줄 거야.</span></div>
+              <div className="setup-quest-map" aria-label="게임 주문서 만들기 여정">
+                <span className="map-label">GAME ORDER PATH</span>
+                <ol>
+                  <li className="current"><b>01</b><span>아이디어 동료<br /><strong>캐릭터 고르기</strong></span></li>
+                  <li><b>02</b><span>상상 카드<br /><strong>이야기 적기</strong></span></li>
+                  <li><b>03</b><span>게임 주문서<br /><strong>ChatGPT에 보내기</strong></span></li>
+                </ol>
+              </div>
             </div>
 
             <div className="character-selection" role="list" aria-label="전용 캐릭터 선택">
-              {characters.map((item) => (
+              {allCharacters.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -345,6 +440,14 @@ export default function Home() {
                   <span className="character-power"><Zap size={13} fill="currentColor" /> {item.power}</span>
                 </button>
               ))}
+            </div>
+
+            <div className="custom-character-lab" style={{ "--character-accent": customCharacter.accent } as CSSProperties}>
+              <div className="custom-lab-symbol"><Palette size={25} /><span>{customCharacter.emoji}</span></div>
+              <div className="custom-lab-copy"><span className="eyebrow">MY CHARACTER LAB</span><h2>직접 만든 캐릭터</h2><p>이름과 대표 색을 바꾸면 바로 네 캐릭터가 돼.</p></div>
+              <label className="character-name-field"><span>이름</span><input value={customCharacter.name} maxLength={12} onChange={(event) => updateCustomCharacter({ name: event.target.value })} placeholder="캐릭터 이름" /></label>
+              <label className="character-color-field"><span>대표 색</span><input type="color" value={customCharacter.accent} onChange={(event) => updateCustomCharacter({ accent: event.target.value })} aria-label="캐릭터 대표 색 선택" /></label>
+              <button type="button" className="custom-select-button" onClick={() => setSelectedCharacter("custom")}>{selectedCharacter === "custom" ? <Check size={17} /> : <Sparkles size={17} />} {selectedCharacter === "custom" ? "선택 완료" : "이 캐릭터로 하기"}</button>
             </div>
 
             <div className="character-launch">
@@ -382,7 +485,7 @@ export default function Home() {
                 <div className="cartridge-slots" aria-label={`아이디어 조각 ${step + 1}번을 쓰는 중입니다`}>{questions.map((item, index) => <i key={item.label} className={index < step && answers[index] ? "filled" : index === step ? "loading" : ""} />)}</div>
                 <div className="question-intro"><span className="question-count">{question.number}</span><div><p className="question-kicker">{question.kicker}</p><h2>{question.question}</h2><p>{question.helper}</p><p className="workshop-cheer"><Sparkles size={14} /> 여기에는 이상한 생각, 웃긴 생각, 멋진 생각이 다 들어갈 수 있어!</p></div></div>
                 <div className="spark-bank"><span>생각 불씨를 눌러 시작해도 돼</span><div>{question.sparks.map((spark) => <button type="button" key={spark} onClick={() => useSpark(spark)}>{spark}</button>)}</div></div>
-                <label className="custom-answer"><span>네 이야기 적기</span><textarea value={answers[step]} onChange={(event) => updateAnswer(event.target.value)} placeholder={question.placeholder} rows={5} maxLength={320} /><small>{answers[step].length}/320</small></label>
+                <label className="custom-answer"><span>네 이야기 적기</span><textarea value={answers[step]} onChange={(event) => updateAnswer(event.target.value)} placeholder={question.placeholder} rows={5} maxLength={320} /><button type="button" className={`voice-input-button ${listening ? "listening" : ""}`} onClick={startVoiceInput} aria-label={listening ? "음성 입력 멈추기" : "음성으로 답변하기"}>{listening ? <MicOff size={18} /> : <Mic size={18} />}<b>{listening ? "듣는 중…" : "말로 적기"}</b></button><small>{answers[step].length}/320</small></label>
                 <div className="card-footer"><button type="button" onClick={previous} className="nav-button back"><ArrowLeft size={18} /> {step === 0 ? "캐릭터" : "이전"}</button><p><b>{step + 1}</b> / 10 자동 저장됨</p><button type="button" onClick={next} className="nav-button next">{step === questions.length - 1 ? "주문서 완성" : "다음 장면"}{step === questions.length - 1 ? <Wand2 size={18} /> : <ArrowRight size={18} />}</button></div>
               </div>
               <div className="mini-note"><Heart size={17} /><span><b>창의력 규칙</b> 다른 게임과 비슷해도 괜찮고, 전혀 이상해도 좋아. 네가 재미있다면 그게 가장 좋은 시작이야.</span></div>
