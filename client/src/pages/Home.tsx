@@ -324,6 +324,7 @@ export default function Home() {
   const [celebrationMessage, setCelebrationMessage] = useState("");
   const [badgeAward, setBadgeAward] = useState<(typeof badges)[number] | null>(null);
   const [welcomeCharacter, setWelcomeCharacter] = useState<Character | null>(null);
+  const [welcomeVoiceStatus, setWelcomeVoiceStatus] = useState<"ready" | "playing" | "unavailable">("ready");
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
 
@@ -511,22 +512,38 @@ export default function Home() {
     : null;
 
   const speakYoungbinWelcome = () => {
-    if (!("speechSynthesis" in window)) {
+    if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance === "undefined") {
+      setWelcomeVoiceStatus("unavailable");
       toast("이 기기에서는 음성 읽기를 지원하지 않아. 인사말을 직접 읽어 봐!");
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance("영빈아, 환영해! 번개 점프 마스터가 게임 공방의 주인공이 됐어. 오늘은 어떤 신나는 세계를 만들어 볼까?");
-    utterance.lang = "ko-KR";
-    utterance.rate = 1.02;
-    utterance.pitch = 1.12;
-    const koreanVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ko"));
-    if (koreanVoice) utterance.voice = koreanVoice;
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance("영빈아, 환영해! 번개 점프 마스터가 게임 공방의 주인공이 됐어. 오늘은 어떤 신나는 세계를 만들어 볼까?");
+      utterance.lang = "ko-KR";
+      utterance.rate = 1.02;
+      utterance.pitch = 1.12;
+      const koreanVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ko"));
+      if (koreanVoice) utterance.voice = koreanVoice;
+      utterance.onstart = () => {
+        setWelcomeVoiceStatus("playing");
+        toast("영빈이를 환영하는 목소리가 재생 중이야!");
+      };
+      utterance.onend = () => setWelcomeVoiceStatus("ready");
+      utterance.onerror = () => {
+        setWelcomeVoiceStatus("unavailable");
+        toast("음성 재생이 막혔어. 아래 인사말을 읽고 바로 시작해도 좋아!");
+      };
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setWelcomeVoiceStatus("unavailable");
+      toast("음성 재생이 막혔어. 아래 인사말을 읽고 바로 시작해도 좋아!");
+    }
   };
 
   const beginFamilyQuest = () => {
     window.speechSynthesis?.cancel();
+    setWelcomeVoiceStatus("ready");
     setWelcomeCharacter(null);
     setStage("questions");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
@@ -534,6 +551,7 @@ export default function Home() {
 
   const startQuest = () => {
     if (["goyoungbin", "dad", "mom"].includes(selectedCharacter)) {
+      setWelcomeVoiceStatus("ready");
       setWelcomeCharacter(character);
       playCelebrationSound();
       if (selectedCharacter === "goyoungbin") speakYoungbinWelcome();
@@ -756,7 +774,7 @@ export default function Home() {
           </section>
         )}
       </main>
-      {welcomeCharacter && welcomeScript && <div className={`youngbin-welcome-overlay welcome-${welcomeCharacter.id}`} style={{ "--welcome-accent": welcomeScript.accent, "--welcome-shadow": welcomeScript.shadow } as CSSProperties} role="dialog" aria-modal="true" aria-labelledby="family-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}{welcomeCharacter.id === "dad" && <div className="dad-tool-burst" aria-hidden="true">{["⚙️", "🔧", "🛠️", "⚙️", "✨"].map((item, index) => <i key={`${item}-${index}`} className={`dad-tool tool-${index}`}>{item}</i>)}</div>}{welcomeCharacter.id === "mom" && <div className="mom-recipe-burst" aria-hidden="true">{["🍪", "💗", "✨", "🧁", "✦"].map((item, index) => <i key={`${item}-${index}`} className={`mom-recipe recipe-${index}`}>{item}</i>)}</div>}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> {welcomeScript.kicker}</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" />{welcomeCharacter.image ? <img src={welcomeCharacter.image} alt={welcomeCharacter.name} /> : <strong>{welcomeCharacter.emoji}</strong>}<b>{welcomeCharacter.emoji}</b></div><p className="youngbin-welcome-small">{welcomeScript.small}</p><h2 id="family-welcome-title">{welcomeScript.heading}</h2><p className="youngbin-welcome-copy">{welcomeScript.copy.split("\n").map((line) => <span key={line}>{line}<br /></span>)}</p><div className="welcome-action-row"><button type="button" className="welcome-start-button" onClick={beginFamilyQuest}><Zap size={20} fill="currentColor" /> {welcomeScript.action}</button>{welcomeCharacter.id === "goyoungbin" && <button type="button" className="welcome-voice-button" onClick={speakYoungbinWelcome}><Volume2 size={18} /> 인사 다시 듣기</button>}</div><small>{welcomeCharacter.id === "goyoungbin" ? "친근한 한국어 음성이 인사말을 읽어 줘." : "버튼을 누르면 첫 번째 아이디어 카드가 열려."}</small></section></div>}
+      {welcomeCharacter && welcomeScript && <div className={`youngbin-welcome-overlay welcome-${welcomeCharacter.id}`} style={{ "--welcome-accent": welcomeScript.accent, "--welcome-shadow": welcomeScript.shadow } as CSSProperties} role="dialog" aria-modal="true" aria-labelledby="family-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}{welcomeCharacter.id === "dad" && <div className="dad-tool-burst" aria-hidden="true">{["⚙️", "🔧", "🛠️", "⚙️", "✨"].map((item, index) => <i key={`${item}-${index}`} className={`dad-tool tool-${index}`}>{item}</i>)}</div>}{welcomeCharacter.id === "mom" && <div className="mom-recipe-burst" aria-hidden="true">{["🍪", "💗", "✨", "🧁", "✦"].map((item, index) => <i key={`${item}-${index}`} className={`mom-recipe recipe-${index}`}>{item}</i>)}</div>}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> {welcomeScript.kicker}</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" />{welcomeCharacter.image ? <img src={welcomeCharacter.image} alt={welcomeCharacter.name} /> : <strong>{welcomeCharacter.emoji}</strong>}<b>{welcomeCharacter.emoji}</b></div><p className="youngbin-welcome-small">{welcomeScript.small}</p><h2 id="family-welcome-title">{welcomeScript.heading}</h2><p className="youngbin-welcome-copy">{welcomeScript.copy.split("\n").map((line) => <span key={line}>{line}<br /></span>)}</p><div className="welcome-action-row"><button type="button" className="welcome-start-button" onClick={beginFamilyQuest}><Zap size={20} fill="currentColor" /> {welcomeScript.action}</button>{welcomeCharacter.id === "goyoungbin" && <button type="button" className="welcome-voice-button" onClick={speakYoungbinWelcome}><Volume2 size={18} /> 인사 다시 듣기</button>}</div><small>{welcomeCharacter.id === "goyoungbin" ? welcomeVoiceStatus === "playing" ? "🎧 영빈이를 환영하는 목소리가 재생 중이야!" : welcomeVoiceStatus === "unavailable" ? "음성이 켜지지 않아도 괜찮아. 인사말을 읽고 바로 시작할 수 있어!" : "친근한 한국어 음성이 인사말을 읽어 줘." : "버튼을 누르면 첫 번째 아이디어 카드가 열려."}</small></section></div>}
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
       {badgeAward && <div className="badge-award-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-award-title"><div className="badge-award-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={`award-${piece.id}`} className="badge-award-spark" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size + 3}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<section className="badge-award-card" style={{ "--award-color": badgeAward.color } as CSSProperties}><span className="badge-award-kicker">NEW BADGE UNLOCKED</span><div className="giant-badge" aria-hidden="true"><span>{badgeAward.icon}</span></div><p>고영빈, 새로운 성취를 해냈어!</p><h2 id="badge-award-title">{badgeAward.title}</h2><b>{badgeAward.copy}</b><div><button type="button" onClick={() => { setBadgeAward(null); setBadgeOpen(true); }}><Medal size={18} /> 컬렉션 보기</button><button type="button" onClick={() => setBadgeAward(null)}>계속 만들기</button></div></section></div>}
       {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><div className="badge-panel-actions"><button type="button" className="badge-share-button" onClick={shareBadgeCollection}><Share2 size={16} /> 카카오톡 공유</button><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></div></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
