@@ -153,6 +153,8 @@ function vitePluginManusDebugCollector(): Plugin {
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
+  // GitHub Pages project sites are served from a repository subpath.
+  base: "./",
   plugins,
   resolve: {
     alias: {
