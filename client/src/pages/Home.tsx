@@ -31,7 +31,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Stage = "character" | "questions" | "result";
+type Stage = "character" | "settings" | "tutorial" | "questions" | "result";
+
+type DifficultyId = "easy" | "normal" | "hard";
+type GenreId = "3d-adventure" | "board" | "sandbox" | "chess" | "card" | "tile" | "rhythm";
 
 type Question = {
   label: string;
@@ -71,6 +74,23 @@ type FamilyWelcomeScript = {
   shadow: string;
 };
 
+type Difficulty = {
+  id: DifficultyId;
+  name: string;
+  copy: string;
+  effect: string;
+  prompt: string;
+  emoji: string;
+};
+
+type Genre = {
+  id: GenreId;
+  name: string;
+  copy: string;
+  emoji: string;
+  prompt: string;
+};
+
 type SavedIdea = {
   id: string;
   title: string;
@@ -78,6 +98,25 @@ type SavedIdea = {
   answers: string[];
   selectedCharacter: string;
   customCharacter: CustomCharacter;
+};
+
+type BackupPayload = {
+  format: "pixel-quest-workshop-backup";
+  version: 1;
+  exportedAt: number;
+  project: {
+    stage: Stage;
+    step: number;
+    answers: string[];
+    selectedCharacter: string;
+    selectedDifficulty: DifficultyId;
+    selectedGenre: GenreId;
+    tutorialStep: number;
+    customCharacter: CustomCharacter;
+    hasAwardedCurrentOrder: boolean;
+  };
+  vault: SavedIdea[];
+  completedOrders: number;
 };
 
 type SpeechRecognitionLike = {
@@ -103,6 +142,22 @@ declare global {
 const STORAGE_KEY = "pixel-quest-workshop-v2";
 const VAULT_KEY = "pixel-quest-idea-vault-v1";
 const BADGE_KEY = "pixel-quest-badge-collection-v1";
+
+const difficulties: Difficulty[] = [
+  { id: "easy", name: "탐험 연습", copy: "천천히 익히며 멋진 장면을 즐겨요.", effect: "포근한 구름·별가루", prompt: "실수해도 즉시 친절한 힌트를 주고, 넉넉한 시간·쉬운 판정·안전한 체크포인트를 제공하는 입문 난이도", emoji: "☁️" },
+  { id: "normal", name: "모험가", copy: "타이밍과 생각을 같이 쓰는 균형 난이도예요.", effect: "오로라·번개 궤적", prompt: "점프 거리와 대시 타이밍, 간단한 퍼즐을 균형 있게 조합한 표준 난이도", emoji: "⚡" },
+  { id: "hard", name: "마스터 도전", copy: "숙련된 플레이를 위한 빠르고 짜릿한 도전이에요.", effect: "네온 폭풍·불꽃 입자", prompt: "정확한 조작, 연속 콤보, 빠른 리듬 판단을 요구하되 실패 이유와 재도전 힌트가 분명한 도전 난이도", emoji: "🔥" },
+];
+
+const genres: Genre[] = [
+  { id: "3d-adventure", name: "3D 액션 모험", copy: "점프, 대시, 탐험으로 세계를 누벼요.", emoji: "🎮", prompt: "원근감 있는 현대 3D 액션 어드벤처" },
+  { id: "board", name: "보드게임", copy: "주사위·말·전략으로 웃음 가득한 한 판!", emoji: "🎲", prompt: "가족이 함께 즐기는 전략 보드게임" },
+  { id: "sandbox", name: "샌드박스 빌딩", copy: "블록을 쌓고 나만의 세계를 만들어요.", emoji: "🧱", prompt: "독창적인 블록 빌딩 샌드박스 창작 게임" },
+  { id: "chess", name: "체스 전략", copy: "말마다 다른 능력을 쓰는 두뇌 대결이에요.", emoji: "♟️", prompt: "쉽게 배울 수 있지만 깊이 있는 체스형 전략 게임" },
+  { id: "card", name: "UNO 카드 파티", copy: "색과 숫자를 맞추며 역전 기회를 노려요.", emoji: "🃏", prompt: "색·숫자 매칭과 특별 규칙이 있는 카드 파티 게임" },
+  { id: "tile", name: "루미큐브 타일", copy: "타일을 이어 깔끔한 조합을 만들어요.", emoji: "🔢", prompt: "숫자와 색 타일을 조합하는 전략 퍼즐 게임" },
+  { id: "rhythm", name: "리듬게임", copy: "박자에 맞춰 움직이며 스테이지를 달려요.", emoji: "🎵", prompt: "시각 신호와 박자를 이용하는 리듬 액션 게임" },
+];
 
 const characters: Character[] = [
   { id: "goyoungbin", name: "고영빈", title: "점프 마스터", emoji: "🧑‍🎤", power: "번개 점프", intro: "어떤 높은 벽도 신나는 리듬으로 넘어가.", accent: "#f3ba54", accessory: "태권도 도복", image: "https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-final.png" },
@@ -247,19 +302,20 @@ const questions: Question[] = [
   },
 ];
 
-function buildPrompt(answers: string[], character: Character) {
+function buildPrompt(answers: string[], character: Character, difficulty: Difficulty, genre: Genre) {
   const [opening, secret, place, firstMove, wowMoment, challenge, reward, learning, ending, youtube] = answers;
 
   return `# 30년 경력 게임 개발자 페르소나
 너는 콘솔·PC·모바일·인디 게임을 30년 동안 만든 베테랑 게임 개발자이자, 초등학교 4학년 게임 제작자의 다정한 멘토다. 아이의 말과 상상을 절대 평범한 공식으로 바꾸지 말고, 가장 재미있는 부분을 발견해 게임 규칙으로 살려라. 어려운 용어는 쉬운 말로 설명하고, 첫 버전은 작지만 실제로 플레이할 수 있게 완성하라.
 
 ## 가장 중요한 제작 규칙
-1. 결과물은 **HTML, CSS, JavaScript를 모두 포함한 index.html 단 하나의 파일**이어야 한다. 절대로 여러 파일로 나누지 말고, 외부 이미지·로그인·서버·유료 서비스도 사용하지 마라.
-2. 코드는 복사해 index.html로 저장하면 바로 브라우저에서 실행돼야 한다.
+1. 결과물은 **HTML, CSS, JavaScript를 모두 포함한 index.html 단 하나의 파일**이어야 한다. 이 규칙은 절대 바꿀 수 없다. 파일 분할, React·Vite·프레임워크 프로젝트, package.json, 외부 CSS·JS, 여러 코드 블록, ZIP 파일을 절대로 만들지 마라.
+2. 최종 답변은 설명보다 먼저, 완성된 **단일 index.html 전체 코드만 하나의 코드 블록**에 제공해야 한다. 복사해 index.html로 저장하면 인터넷 없이 바로 실행돼야 한다.
 3. 키보드 조작과 화면 아래의 터치 조작 버튼을 함께 제공해서 PC·스마트폰·태블릿 모두에서 플레이 가능하게 만들어라.
 4. 시작 화면, 조작 안내, 진행 또는 점수 표시, 성공·실패 화면, 다시 시작 버튼을 넣어라.
 5. 초등학교 4학년이 읽을 수 있게 코드에 쉬운 한국어 주석을 충분히 달아라.
 6. 외부 이미지·로그인·서버·유료 서비스 없이 CSS 도형, 이모지, Canvas 2D 또는 순수 WebGL만으로 독창적인 3D 느낌을 만들어라. 화면이 작아져도 글자와 버튼이 겹치지 않게 만들어라.
+7. 게임 첫 화면에 **난이도 선택**을 넣고, 선택한 난이도에 따라 배경 입자·빛·속도·힌트 밀도를 다르게 보여 줘라. 시작 전에 이동·점프·대시 또는 장르 핵심 조작을 한 번씩 직접 해 보는 미니 튜토리얼 스테이지를 반드시 넣어라.
 
 ## 최신 3D 액션 게임 완성도 기준
 1. 단순한 옛날 플랫포머가 아니라, 휴대용 콘솔 액션 어드벤처처럼 보이는 **독창적인 현대 3D 스타일**을 목표로 해라. 특정 게임·캐릭터·상표를 따라 하지 말고, 이 아이디어만의 세계관과 시각 언어를 만들어라.
@@ -275,6 +331,11 @@ function buildPrompt(answers: string[], character: Character) {
 - 대표 소품: ${character.accessory}
 - 성격과 분위기: ${character.intro}
 
+## 선택한 게임 방향
+- 장르: ${genre.name} (${genre.prompt})
+- 난이도: ${difficulty.name} — ${difficulty.prompt}
+- 난이도 배경 효과: ${difficulty.effect}
+
 ## 아이가 만든 게임 주문서
 - 첫 장면: ${opening}
 - 주인공의 비밀: ${secret}
@@ -287,7 +348,7 @@ function buildPrompt(answers: string[], character: Character) {
 - 마지막 장면: ${ending}
 
 ## 답변 방식
-먼저 ‘만들 게임’과 ‘조작 방법’을 6줄 이내로 신나고 쉽게 설명해라. 다음으로 완성된 **index.html 전체 코드**를 코드 블록 하나에만 넣어라. 코드 뒤에는 아래 유튜브 아이디어를 바탕으로 짧은 영상 제목 3개, 썸네일 문구 3개, 30초 영상 대본을 덧붙여라.
+먼저 ‘만들 게임’과 ‘조작 방법’을 6줄 이내로 신나고 쉽게 설명해라. 다음으로 완성된 **index.html 전체 코드만** 코드 블록 하나에 넣어라. 다른 파일·설치 명령·분할된 코드·의존성 설명은 절대 포함하지 마라. 코드 뒤에는 아래 유튜브 아이디어를 바탕으로 짧은 영상 제목 3개, 썸네일 문구 3개, 30초 영상 대본을 덧붙여라.
 
 ## 유튜브 영상의 한마디
 ${youtube}
@@ -311,6 +372,9 @@ export default function Home() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(""));
   const [selectedCharacter, setSelectedCharacter] = useState("goyoungbin");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyId>("normal");
+  const [selectedGenre, setSelectedGenre] = useState<GenreId>("3d-adventure");
+  const [tutorialStep, setTutorialStep] = useState(0);
   const [customCharacter, setCustomCharacter] = useState<CustomCharacter>({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
   const [hydrated, setHydrated] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -325,18 +389,24 @@ export default function Home() {
   const [badgeAward, setBadgeAward] = useState<(typeof badges)[number] | null>(null);
   const [welcomeCharacter, setWelcomeCharacter] = useState<Character | null>(null);
   const [welcomeVoiceStatus, setWelcomeVoiceStatus] = useState<"ready" | "playing" | "unavailable">("ready");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingBackup, setPendingBackup] = useState<BackupPayload | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string; customCharacter: CustomCharacter; hasAwardedCurrentOrder: boolean }>;
+        const parsed = JSON.parse(saved) as Partial<{ stage: Stage; step: number; answers: string[]; selectedCharacter: string; selectedDifficulty: DifficultyId; selectedGenre: GenreId; tutorialStep: number; customCharacter: CustomCharacter; hasAwardedCurrentOrder: boolean }>;
         if (parsed.stage) setStage(parsed.stage);
         if (typeof parsed.step === "number") setStep(Math.min(Math.max(parsed.step, 0), questions.length - 1));
         if (Array.isArray(parsed.answers)) setAnswers(questions.map((_, index) => parsed.answers?.[index] ?? ""));
         if (characters.some((character) => character.id === parsed.selectedCharacter) || parsed.selectedCharacter === "custom") setSelectedCharacter(parsed.selectedCharacter as string);
+        if (difficulties.some((difficulty) => difficulty.id === parsed.selectedDifficulty)) setSelectedDifficulty(parsed.selectedDifficulty as DifficultyId);
+        if (genres.some((genre) => genre.id === parsed.selectedGenre)) setSelectedGenre(parsed.selectedGenre as GenreId);
+        if (typeof parsed.tutorialStep === "number") setTutorialStep(Math.min(Math.max(parsed.tutorialStep, 0), 3));
         if (parsed.customCharacter?.name && parsed.customCharacter?.accent) setCustomCharacter(parsed.customCharacter);
         if (parsed.hasAwardedCurrentOrder) setHasAwardedCurrentOrder(true);
       }
@@ -361,8 +431,8 @@ export default function Home() {
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter, customCharacter, hasAwardedCurrentOrder }));
-  }, [answers, customCharacter, hasAwardedCurrentOrder, hydrated, selectedCharacter, stage, step]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, step, answers, selectedCharacter, selectedDifficulty, selectedGenre, tutorialStep, customCharacter, hasAwardedCurrentOrder }));
+  }, [answers, customCharacter, hasAwardedCurrentOrder, hydrated, selectedCharacter, selectedDifficulty, selectedGenre, stage, step, tutorialStep]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -373,13 +443,27 @@ export default function Home() {
     if (hydrated) window.localStorage.setItem(BADGE_KEY, String(completedOrders));
   }, [completedOrders, hydrated]);
 
+  useEffect(() => {
+    if (stage !== "tutorial") return;
+    const handleTutorialKey = (event: KeyboardEvent) => {
+      if (["ArrowLeft", "ArrowRight", "a", "d", "A", "D", " ", "Shift"].includes(event.key)) {
+        event.preventDefault();
+        setTutorialStep((current) => Math.min(current + 1, 3));
+      }
+    };
+    window.addEventListener("keydown", handleTutorialKey);
+    return () => window.removeEventListener("keydown", handleTutorialKey);
+  }, [stage]);
+
   const allCharacters = useMemo(() => [
     ...characters,
     { id: "custom", name: customCharacter.name.trim() || "나만의 주인공", title: "직접 만든 캐릭터", emoji: customCharacter.emoji || "✨", power: "내가 정한 능력", intro: "이야기와 색을 네가 직접 정했어.", accent: customCharacter.accent, accessory: "상상 노트" },
   ], [customCharacter]);
   const character = allCharacters.find((item) => item.id === selectedCharacter) ?? allCharacters[0];
+  const difficulty = difficulties.find((item) => item.id === selectedDifficulty) ?? difficulties[1];
+  const genre = genres.find((item) => item.id === selectedGenre) ?? genres[0];
   const question = questions[step];
-  const prompt = useMemo(() => buildPrompt(answers, character), [answers, character]);
+  const prompt = useMemo(() => buildPrompt(answers, character, difficulty, genre), [answers, character, difficulty, genre]);
   const progress = stage === "result" ? 100 : stage === "questions" ? Math.round(((step + 1) / questions.length) * 100) : 0;
   const shortAnswer = answers[step]?.trim().length > 0 && answers[step].trim().length < 24;
   const followUp = followUpPrompts[step];
@@ -511,7 +595,8 @@ export default function Home() {
     ? familyWelcomeScripts[welcomeCharacter.id as keyof typeof familyWelcomeScripts]
     : null;
 
-  const speakYoungbinWelcome = () => {
+  const speakFamilyWelcome = () => {
+    if (!welcomeCharacter || !welcomeScript) return;
     if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance === "undefined") {
       setWelcomeVoiceStatus("unavailable");
       toast("이 기기에서는 음성 읽기를 지원하지 않아. 인사말을 직접 읽어 봐!");
@@ -519,15 +604,16 @@ export default function Home() {
     }
     try {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("영빈아, 환영해! 번개 점프 마스터가 게임 공방의 주인공이 됐어. 오늘은 어떤 신나는 세계를 만들어 볼까?");
+      const voiceLine = `${welcomeScript.heading} ${welcomeScript.copy.replace(/\n/g, " ")}`;
+      const utterance = new SpeechSynthesisUtterance(voiceLine);
       utterance.lang = "ko-KR";
-      utterance.rate = 1.02;
-      utterance.pitch = 1.12;
+      utterance.rate = welcomeCharacter.id === "dad" ? .94 : welcomeCharacter.id === "mom" ? 1.06 : 1.02;
+      utterance.pitch = welcomeCharacter.id === "dad" ? .9 : welcomeCharacter.id === "mom" ? 1.16 : 1.12;
       const koreanVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ko"));
       if (koreanVoice) utterance.voice = koreanVoice;
       utterance.onstart = () => {
         setWelcomeVoiceStatus("playing");
-        toast("영빈이를 환영하는 목소리가 재생 중이야!");
+        toast(`${welcomeCharacter.name}을(를) 환영하는 목소리가 재생 중이야!`);
       };
       utterance.onend = () => setWelcomeVoiceStatus("ready");
       utterance.onerror = () => {
@@ -545,6 +631,17 @@ export default function Home() {
     window.speechSynthesis?.cancel();
     setWelcomeVoiceStatus("ready");
     setWelcomeCharacter(null);
+    setStage("settings");
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  };
+
+  const startTutorial = () => {
+    setTutorialStep(0);
+    setStage("tutorial");
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  };
+
+  const finishTutorial = () => {
     setStage("questions");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   };
@@ -554,7 +651,7 @@ export default function Home() {
       setWelcomeVoiceStatus("ready");
       setWelcomeCharacter(character);
       playCelebrationSound();
-      if (selectedCharacter === "goyoungbin") speakYoungbinWelcome();
+      speakFamilyWelcome();
       return;
     }
     beginFamilyQuest();
@@ -637,6 +734,66 @@ export default function Home() {
     }
   };
 
+  const exportBackup = () => {
+    const backup: BackupPayload = {
+      format: "pixel-quest-workshop-backup",
+      version: 1,
+      exportedAt: Date.now(),
+      project: { stage, step, answers, selectedCharacter, selectedDifficulty, selectedGenre, tutorialStep, customCharacter, hasAwardedCurrentOrder },
+      vault,
+      completedOrders,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pixel-quest-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast("현재 아이디어와 배지 기록을 백업 파일로 저장했어.");
+  };
+
+  const inspectBackup = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as BackupPayload;
+        if (parsed.format !== "pixel-quest-workshop-backup" || parsed.version !== 1 || !parsed.project || !Array.isArray(parsed.vault)) throw new Error("invalid backup");
+        setPendingBackup(parsed);
+      } catch {
+        toast("게임 주문서 공방에서 만든 백업 파일인지 확인해 줘.");
+      }
+    };
+    reader.onerror = () => toast("백업 파일을 읽지 못했어. 다시 선택해 봐.");
+    reader.readAsText(file);
+  };
+
+  const applySafeMerge = () => {
+    if (!pendingBackup) return;
+    const localIdeaIds = new Set(vault.map((idea) => idea.id));
+    const importedIdeas = pendingBackup.vault.map((idea) => localIdeaIds.has(idea.id) ? { ...idea, id: `${idea.id}-import-${pendingBackup.exportedAt}`, title: `${idea.title} (가져온 사본)` } : idea);
+    const mergedVault = [...vault, ...importedIdeas].slice(0, 30);
+    const importedAnswers = questions.map((_, index) => pendingBackup.project.answers?.[index] ?? "");
+    const localAnswerCount = answers.filter((answer) => answer.trim()).length;
+    const importedAnswerCount = importedAnswers.filter((answer) => answer.trim()).length;
+    const mergedAnswers = answers.map((answer, index) => answer.trim() ? answer : importedAnswers[index]);
+    const importedFurther = importedAnswerCount > localAnswerCount;
+    setAnswers(mergedAnswers);
+    setVault(mergedVault);
+    setCompletedOrders((current) => Math.max(current, pendingBackup.completedOrders || 0));
+    if (importedFurther) {
+      setStage(pendingBackup.project.stage === "character" ? "questions" : pendingBackup.project.stage);
+      setStep(Math.min(Math.max(pendingBackup.project.step || 0, 0), questions.length - 1));
+      setSelectedCharacter(pendingBackup.project.selectedCharacter || selectedCharacter);
+      setSelectedDifficulty(pendingBackup.project.selectedDifficulty || selectedDifficulty);
+      setSelectedGenre(pendingBackup.project.selectedGenre || selectedGenre);
+      setTutorialStep(Math.min(Math.max(pendingBackup.project.tutorialStep || 0, 0), 3));
+      if (pendingBackup.project.customCharacter?.name) setCustomCharacter(pendingBackup.project.customCharacter);
+    }
+    setPendingBackup(null);
+    toast(`안전 병합 완료: 현재 답변은 지키고, 가져온 아이디어 ${importedIdeas.length}개를 보관함에 더했어.`);
+  };
+
   const downloadPrompt = () => {
     const blob = new Blob([prompt], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -654,6 +811,9 @@ export default function Home() {
     setStep(0);
     setAnswers(Array(questions.length).fill(""));
     setSelectedCharacter("goyoungbin");
+    setSelectedDifficulty("normal");
+    setSelectedGenre("3d-adventure");
+    setTutorialStep(0);
     setCustomCharacter({ name: "나만의 주인공", accent: "#80c9f6", emoji: "✨" });
     setHasAwardedCurrentOrder(false);
     setCopied(false);
@@ -672,6 +832,8 @@ export default function Home() {
       </header>
 
       <main id="top" className="relative z-10 mx-auto w-full max-w-[1440px] px-5 pb-12 sm:px-8 lg:px-12">
+        <button type="button" className="system-settings-trigger" onClick={() => setSettingsOpen(true)}>⚙️ 시스템 설정 <small>백업·도움말</small></button>
+        <nav className="beginner-flow" aria-label="게임 주문서 쉬운 순서 안내"><span className={stage === "character" ? "active" : ""}><b>1</b> 친구 고르기</span><i /> <span className={stage === "settings" || stage === "tutorial" ? "active" : ""}><b>2</b> 게임 설정·연습</span><i /> <span className={stage === "questions" ? "active" : ""}><b>3</b> 상상 답하기</span><i /> <span className={stage === "result" ? "active" : ""}><b>4</b> 프롬프트 복사</span></nav>
         {stage === "character" && (
           <section className="character-stage" aria-labelledby="character-title">
             <div className="character-intro">
@@ -720,6 +882,24 @@ export default function Home() {
               <div className="chosen-character"><span>{character.image && <img src={character.image} alt="" onError={(event) => { event.currentTarget.dataset.failed = "true"; event.currentTarget.style.display = "none"; }} />}<i>{character.emoji}</i></span><p><b>{character.name}</b>와 함께 갈 준비 완료!<small>대표 소품: {character.accessory}</small></p></div>
               <button type="button" onClick={startQuest} className="launch-button">이 친구로 이야기 시작 <ArrowRight size={19} /></button>
             </div>
+          </section>
+        )}
+
+        {stage === "settings" && (
+          <section className={`game-settings-stage difficulty-${difficulty.id}`} style={{ "--difficulty-accent": difficulty.id === "easy" ? "#8eceef" : difficulty.id === "hard" ? "#f05a4f" : "#b6f23d" } as CSSProperties} aria-labelledby="settings-title">
+            <div className="settings-fx" aria-hidden="true">{Array.from({ length: 18 }, (_, index) => <i key={index} style={{ "--n": index } as CSSProperties}>{difficulty.emoji}</i>)}</div>
+            <div className="settings-head"><span className="eyebrow"><Gamepad2 size={15} /> GAME MODE LOADOUT</span><h1 id="settings-title">{character.name}의 게임<br /><em>난이도와 장르</em>를 골라 봐.</h1><p>처음이어도 괜찮아. 아래에서 하나씩 고르면, 마지막에 ChatGPT에 바로 붙여 넣을 게임 주문서가 완성돼.</p></div>
+            <div className="settings-summary"><span>{character.emoji}</span><b>{character.name}</b><small>{difficulty.emoji} {difficulty.name} · {genre.emoji} {genre.name}</small></div>
+            <section className="setting-group"><div className="setting-group-title"><span>01</span><div><b>난이도 선택</b><small>배경 효과도 함께 달라져.</small></div></div><div className="difficulty-grid">{difficulties.map((item) => <button type="button" key={item.id} className={selectedDifficulty === item.id ? "active" : ""} onClick={() => setSelectedDifficulty(item.id)}><i>{item.emoji}</i><b>{item.name}</b><span>{item.copy}</span><small>{item.effect}</small></button>)}</div></section>
+            <section className="setting-group"><div className="setting-group-title"><span>02</span><div><b>게임 장르 선택</b><small>좋아하는 게임 느낌을 주문서에 담아.</small></div></div><div className="genre-grid">{genres.map((item) => <button type="button" key={item.id} className={selectedGenre === item.id ? "active" : ""} onClick={() => setSelectedGenre(item.id)}><i>{item.emoji}</i><b>{item.name}</b><span>{item.copy}</span></button>)}</div></section>
+            <div className="settings-actions"><button type="button" className="settings-back" onClick={() => setStage("character")}><ArrowLeft size={18} /> 캐릭터 다시 고르기</button><button type="button" className="settings-next" onClick={startTutorial}>조작 연습 시작 <ArrowRight size={18} /></button></div>
+          </section>
+        )}
+
+        {stage === "tutorial" && (
+          <section className={`tutorial-stage difficulty-${difficulty.id}`} style={{ "--difficulty-accent": difficulty.id === "easy" ? "#8eceef" : difficulty.id === "hard" ? "#f05a4f" : "#b6f23d", "--tutorial-step": tutorialStep } as CSSProperties} aria-labelledby="tutorial-title">
+            <div className="tutorial-sky" aria-hidden="true"><i /><i /><i /></div>
+            <div className="tutorial-panel"><span className="eyebrow"><Zap size={15} fill="currentColor" /> PRACTICE STAGE 01</span><h1 id="tutorial-title">본격 시작 전에<br /><em>조작을 연습해 보자!</em></h1><p>{genre.name} · {difficulty.name} 모드로 준비했어. 아래 버튼 또는 키보드를 눌러 연습 미션을 깨 봐.</p><div className="tutorial-progress" aria-label={`튜토리얼 진행 ${tutorialStep} / 3`}>{[1, 2, 3].map((item) => <i key={item} className={tutorialStep >= item ? "done" : ""}>{tutorialStep >= item ? <Check size={13} /> : item}</i>)}</div><div className="tutorial-arena"><div className={`tutorial-hero step-${tutorialStep}`}>{character.image ? <img src={character.image} alt="" /> : <span>{character.emoji}</span>}<b>{character.emoji}</b></div><div className="tutorial-goal"><span>{tutorialStep === 0 ? "먼저 이동해 봐!" : tutorialStep === 1 ? "좋아! 이제 점프해 봐!" : tutorialStep === 2 ? "마지막으로 대시를 써 봐!" : "연습 완료! 주문서를 만들자!"}</span><i /></div></div><div className="tutorial-controls"><button type="button" onClick={() => setTutorialStep((current) => Math.min(current + 1, 3))}>←<small>이동</small></button><button type="button" onClick={() => setTutorialStep((current) => Math.min(current + 1, 3))}>↑<small>점프</small></button><button type="button" onClick={() => setTutorialStep((current) => Math.min(current + 1, 3))}>⚡<small>대시</small></button></div><small className="tutorial-keyboard">키보드: ← → 또는 A D · Space · Shift</small><div className="tutorial-actions"><button type="button" onClick={() => setStage("settings")}><ArrowLeft size={17} /> 설정으로</button><button type="button" disabled={tutorialStep < 3} onClick={finishTutorial}>{tutorialStep < 3 ? "조작을 모두 연습해 봐" : "게임 주문서 만들기"} <ArrowRight size={18} /></button></div></div>
           </section>
         )}
 
@@ -774,11 +954,13 @@ export default function Home() {
           </section>
         )}
       </main>
-      {welcomeCharacter && welcomeScript && <div className={`youngbin-welcome-overlay welcome-${welcomeCharacter.id}`} style={{ "--welcome-accent": welcomeScript.accent, "--welcome-shadow": welcomeScript.shadow } as CSSProperties} role="dialog" aria-modal="true" aria-labelledby="family-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}{welcomeCharacter.id === "dad" && <div className="dad-tool-burst" aria-hidden="true">{["⚙️", "🔧", "🛠️", "⚙️", "✨"].map((item, index) => <i key={`${item}-${index}`} className={`dad-tool tool-${index}`}>{item}</i>)}</div>}{welcomeCharacter.id === "mom" && <div className="mom-recipe-burst" aria-hidden="true">{["🍪", "💗", "✨", "🧁", "✦"].map((item, index) => <i key={`${item}-${index}`} className={`mom-recipe recipe-${index}`}>{item}</i>)}</div>}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> {welcomeScript.kicker}</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" />{welcomeCharacter.image ? <img src={welcomeCharacter.image} alt={welcomeCharacter.name} /> : <strong>{welcomeCharacter.emoji}</strong>}<b>{welcomeCharacter.emoji}</b></div><p className="youngbin-welcome-small">{welcomeScript.small}</p><h2 id="family-welcome-title">{welcomeScript.heading}</h2><p className="youngbin-welcome-copy">{welcomeScript.copy.split("\n").map((line) => <span key={line}>{line}<br /></span>)}</p><div className="welcome-action-row"><button type="button" className="welcome-start-button" onClick={beginFamilyQuest}><Zap size={20} fill="currentColor" /> {welcomeScript.action}</button>{welcomeCharacter.id === "goyoungbin" && <button type="button" className="welcome-voice-button" onClick={speakYoungbinWelcome}><Volume2 size={18} /> 인사 다시 듣기</button>}</div><small>{welcomeCharacter.id === "goyoungbin" ? welcomeVoiceStatus === "playing" ? "🎧 영빈이를 환영하는 목소리가 재생 중이야!" : welcomeVoiceStatus === "unavailable" ? "음성이 켜지지 않아도 괜찮아. 인사말을 읽고 바로 시작할 수 있어!" : "친근한 한국어 음성이 인사말을 읽어 줘." : "버튼을 누르면 첫 번째 아이디어 카드가 열려."}</small></section></div>}
+      {welcomeCharacter && welcomeScript && <div className={`youngbin-welcome-overlay welcome-${welcomeCharacter.id}`} style={{ "--welcome-accent": welcomeScript.accent, "--welcome-shadow": welcomeScript.shadow } as CSSProperties} role="dialog" aria-modal="true" aria-labelledby="family-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}{welcomeCharacter.id === "dad" && <div className="dad-tool-burst" aria-hidden="true">{["⚙️", "🔧", "🛠️", "⚙️", "✨"].map((item, index) => <i key={`${item}-${index}`} className={`dad-tool tool-${index}`}>{item}</i>)}</div>}{welcomeCharacter.id === "mom" && <div className="mom-recipe-burst" aria-hidden="true">{["🍪", "💗", "✨", "🧁", "✦"].map((item, index) => <i key={`${item}-${index}`} className={`mom-recipe recipe-${index}`}>{item}</i>)}</div>}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> {welcomeScript.kicker}</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" />{welcomeCharacter.image ? <img src={welcomeCharacter.image} alt={welcomeCharacter.name} /> : <strong>{welcomeCharacter.emoji}</strong>}<b>{welcomeCharacter.emoji}</b></div><p className="youngbin-welcome-small">{welcomeScript.small}</p><h2 id="family-welcome-title">{welcomeScript.heading}</h2><p className="youngbin-welcome-copy">{welcomeScript.copy.split("\n").map((line) => <span key={line}>{line}<br /></span>)}</p><div className="welcome-action-row"><button type="button" className="welcome-start-button" onClick={beginFamilyQuest}><Zap size={20} fill="currentColor" /> {welcomeScript.action}</button><button type="button" className="welcome-voice-button" onClick={speakFamilyWelcome}><Volume2 size={18} /> 인사 다시 듣기</button></div><small>{welcomeVoiceStatus === "playing" ? "한국어 음성이 인사말을 읽고 있어." : welcomeVoiceStatus === "unavailable" ? "이 기기에서는 음성이 지원되지 않아. 인사말을 읽고 시작해도 좋아." : "각 캐릭터의 한국어 음성 인사를 들을 수 있어."}</small></section></div>}
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
       {badgeAward && <div className="badge-award-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-award-title"><div className="badge-award-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={`award-${piece.id}`} className="badge-award-spark" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size + 3}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<section className="badge-award-card" style={{ "--award-color": badgeAward.color } as CSSProperties}><span className="badge-award-kicker">NEW BADGE UNLOCKED</span><div className="giant-badge" aria-hidden="true"><span>{badgeAward.icon}</span></div><p>고영빈, 새로운 성취를 해냈어!</p><h2 id="badge-award-title">{badgeAward.title}</h2><b>{badgeAward.copy}</b><div><button type="button" onClick={() => { setBadgeAward(null); setBadgeOpen(true); }}><Medal size={18} /> 컬렉션 보기</button><button type="button" onClick={() => setBadgeAward(null)}>계속 만들기</button></div></section></div>}
       {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><div className="badge-panel-actions"><button type="button" className="badge-share-button" onClick={shareBadgeCollection}><Share2 size={16} /> 카카오톡 공유</button><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></div></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
       {vaultOpen && <div className="vault-overlay" role="dialog" aria-modal="true" aria-labelledby="vault-title"><section className="vault-panel"><header><div><span className="eyebrow"><Archive size={15} /> IDEA VAULT</span><h2 id="vault-title">게임 아이디어 보관함</h2><p>이 기기 브라우저에 저장돼. 최대 30개까지 다시 열 수 있어.</p></div><button type="button" onClick={() => setVaultOpen(false)} aria-label="보관함 닫기"><X size={21} /></button></header>{vault.length === 0 ? <div className="vault-empty"><Archive size={34} /><b>아직 보관한 게임이 없어.</b><span>게임 주문서를 완성한 뒤 ‘보관함에 저장’을 눌러 봐!</span></div> : <div className="vault-list">{vault.map((idea) => <article key={idea.id}><div><span>{new Date(idea.savedAt).toLocaleDateString("ko-KR")}</span><b>{idea.title}</b><p>{idea.answers.filter(Boolean).length}/10개 아이디어 조각 · {idea.selectedCharacter === "custom" ? idea.customCharacter.name : characters.find((item) => item.id === idea.selectedCharacter)?.name ?? "게임 친구"}</p></div><div><button type="button" className="vault-load" onClick={() => loadFromVault(idea)}>다시 열기</button><button type="button" className="vault-delete" onClick={() => removeFromVault(idea.id)} aria-label={`${idea.title} 삭제`}><Trash2 size={17} /></button></div></article>)}</div>}</section></div>}
+      {vaultOpen && <div className="vault-overlay" role="dialog" aria-modal="true" aria-labelledby="vault-title"><section className="vault-panel"><header><div><span className="eyebrow"><Archive size={15} /> IDEA VAULT</span><h2 id="vault-title">게임 아이디어 보관함</h2><p>이 기기 브라우저에 저장돼. 최대 30개까지 다시 열 수 있어.</p></div><button type="button" onClick={() => setVaultOpen(false)} aria-label="보관함 닫기"><X size={21} /></button></header>{vault.length === 0 ? <div className="vault-empty"><Archive size={34} /><b>아직 보관한 게임이 없어.</b><span>게임 주문서를 완성한 뒤 ‘보관함에 저장’을 눌러 봐!</span></div> : <div className="vault-list">{vault.map((idea) => <article key={idea.id}><div><span>{new Date(idea.savedAt).toLocaleDateString("ko-KR")}</span><b>{idea.title}</b><p>{idea.answers.filter(Boolean).length}/10개 아이디어 조각 · {idea.selectedCharacter === "custom" ? idea.customCharacter.name : characters.find((item) => item.id === idea.selectedCharacter)?.name ?? "게임 친구"}</p></div><div><button type="button" className="vault-load" onClick={() => loadFromVault(idea)}>다시 열기</button><button type="button" className="vault-delete" onClick={() => removeFromVault(idea.id)} aria-label={`${idea.title} 삭제`}><Trash2 size={17} /></button></div></article>)}</div>}</section></div>}
+      {settingsOpen && <div className="vault-overlay system-overlay" role="dialog" aria-modal="true" aria-labelledby="system-title"><section className="system-panel"><header><div><span className="eyebrow">⚙️ SYSTEM DESK</span><h2 id="system-title">시스템 설정과 안전 보관함</h2><p>복잡한 기능은 여기에서 천천히 해도 돼. 게임 아이디어는 이 기기 안에서만 관리해.</p></div><button type="button" onClick={() => { setSettingsOpen(false); setPendingBackup(null); }} aria-label="시스템 설정 닫기"><X size={21} /></button></header><div className="system-beginner"><b>처음 사용하는 친구를 위한 순서</b><span>① 캐릭터 고르기 → ② 난이도·장르 고르기 → ③ 조작 연습 → ④ 10문 10답 → ⑤ 프롬프트 복사</span></div><section className="system-section"><div><span>01 · 백업 만들기</span><b>지금의 아이디어를 파일로 안전하게 저장</b><p>JSON 파일 하나로 답변, 보관함, 배지 기록을 함께 보관해. 다른 기기에서 복원할 때 써.</p></div><button type="button" className="system-primary" onClick={exportBackup}><Download size={17} /> 백업 파일 만들기</button></section><section className="system-section"><div><span>02 · 안전하게 가져오기</span><b>기존 기록을 지우지 않고 병합</b><p>현재 답변은 우선 지키고, 비어 있는 답만 채워. 같은 아이디어가 충돌하면 가져온 사본으로 둘 다 보관해.</p></div><div className="system-import-actions"><input ref={backupInputRef} type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) inspectBackup(file); event.currentTarget.value = ""; }} /><button type="button" className="system-primary" onClick={() => backupInputRef.current?.click()}>가져올 백업 고르기</button></div></section><section className="merge-rules"><b>충돌 안전 병합 규칙</b><ol><li><strong>현재 답변 우선:</strong> 이미 쓴 문장은 절대 덮어쓰지 않아.</li><li><strong>빈 답만 채움:</strong> 현재 비어 있는 질문은 백업의 답으로 채워.</li><li><strong>아이디어 둘 다 보관:</strong> 같은 ID가 다르면 ‘가져온 사본’으로 별도 저장해.</li><li><strong>성취는 더 높은 기록:</strong> 배지 완성 횟수는 더 큰 숫자를 사용해.</li></ol></section>{pendingBackup && <section className="merge-preview"><span>가져온 백업 미리보기</span><h3>{new Date(pendingBackup.exportedAt).toLocaleString("ko-KR")}에 만든 기록</h3><p>답변 {pendingBackup.project.answers.filter((answer) => answer.trim()).length}/10개 · 보관함 {pendingBackup.vault.length}개 · 완성 주문서 {pendingBackup.completedOrders}개</p><div><button type="button" onClick={() => setPendingBackup(null)}>취소</button><button type="button" className="system-primary" onClick={applySafeMerge}>규칙대로 안전 병합</button></div></section>}</section></div>}
       <footer className="relative z-10 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-6 text-xs font-bold tracking-wide text-[#68728c] sm:px-8 lg:px-12"><span>PIXEL QUEST WORKSHOP · YOUR IDEA IS THE MAP</span><span>MADE FOR YOUNG GAME CREATORS</span></footer>
     </div>
   );
