@@ -23,6 +23,7 @@ import {
   Share2,
   Sparkles,
   Trash2,
+  Volume2,
   Wand2,
   X,
   Youtube,
@@ -58,6 +59,16 @@ type CustomCharacter = {
   name: string;
   accent: string;
   emoji: string;
+};
+
+type FamilyWelcomeScript = {
+  kicker: string;
+  small: string;
+  heading: string;
+  copy: string;
+  action: string;
+  accent: string;
+  shadow: string;
 };
 
 type SavedIdea = {
@@ -127,6 +138,12 @@ const badges = [
   { id: "five", target: 5, icon: "🛠️", title: "게임 공방장", copy: "다섯 개의 게임 주문서를 만든 멋진 제작자!", color: "#b6f23d" },
   { id: "ten", target: 10, icon: "👑", title: "전설의 게임 제작자", copy: "열 개의 모험을 만든 진짜 게임 장인!", color: "#b894f6" },
 ];
+
+const familyWelcomeScripts: Record<"goyoungbin" | "dad" | "mom", FamilyWelcomeScript> = {
+  goyoungbin: { kicker: "JUMP MASTER ARRIVAL", small: "번개 점프 마스터가 입장했어!", heading: "영빈아, 환영해!", copy: "고영빈이 게임 공방의 주인공이 됐어.\n오늘은 어떤 신나는 세계를 만들어 볼까?", action: "번개 점프, 출발!", accent: "#b6f23d", shadow: "#f3ba54" },
+  dad: { kicker: "WORKSHOP MASTER ARRIVAL", small: "아이디어 공방장이 도착했어!", heading: "환석 아빠, 환영해!", copy: "작은 부품도 멋진 모험 도구로 바꾸는\n고환석 아빠와 새로운 게임 장치를 조립해 보자!", action: "공방 부스터, 시작!", accent: "#78c7b3", shadow: "#f3ba54" },
+  mom: { kicker: "MAGIC RECIPE ARRIVAL", small: "마법 간식 연구가가 도착했어!", heading: "지연 엄마, 환영해!", copy: "따뜻한 상상 한 스푼을 더하는\n서지연 엄마와 특별한 게임 레시피를 만들어 보자!", action: "행운 레시피, 시작!", accent: "#f49cba", shadow: "#b894f6" },
+};
 
 const fireworkPieces = Array.from({ length: 44 }, (_, index) => ({
   id: index,
@@ -240,9 +257,16 @@ function buildPrompt(answers: string[], character: Character) {
 1. 결과물은 **HTML, CSS, JavaScript를 모두 포함한 index.html 단 하나의 파일**이어야 한다. 절대로 여러 파일로 나누지 말고, 외부 이미지·로그인·서버·유료 서비스도 사용하지 마라.
 2. 코드는 복사해 index.html로 저장하면 바로 브라우저에서 실행돼야 한다.
 3. 키보드 조작과 화면 아래의 터치 조작 버튼을 함께 제공해서 PC·스마트폰·태블릿 모두에서 플레이 가능하게 만들어라.
-4. 시작 화면, 쉬운 조작 안내, 진행 또는 점수 표시, 성공·실패 화면, 다시 시작 버튼을 넣어라.
+4. 시작 화면, 조작 안내, 진행 또는 점수 표시, 성공·실패 화면, 다시 시작 버튼을 넣어라.
 5. 초등학교 4학년이 읽을 수 있게 코드에 쉬운 한국어 주석을 충분히 달아라.
-6. 그림은 CSS 도형, 이모지, 간단한 Canvas만 써서 만들고, 화면이 작아져도 글자와 버튼이 겹치지 않게 만들어라.
+6. 외부 이미지·로그인·서버·유료 서비스 없이 CSS 도형, 이모지, Canvas 2D 또는 순수 WebGL만으로 독창적인 3D 느낌을 만들어라. 화면이 작아져도 글자와 버튼이 겹치지 않게 만들어라.
+
+## 최신 3D 액션 게임 완성도 기준
+1. 단순한 옛날 플랫포머가 아니라, 휴대용 콘솔 액션 어드벤처처럼 보이는 **독창적인 현대 3D 스타일**을 목표로 해라. 특정 게임·캐릭터·상표를 따라 하지 말고, 이 아이디어만의 세계관과 시각 언어를 만들어라.
+2. 원근감 있는 바닥과 배경, 부드러운 카메라 추적, 깊이감 있는 그림자·빛·안개, 파티클, 발자국·충돌 이펙트, 자연스러운 착지 반동을 넣어 작은 화면에서도 입체감과 손맛이 느껴지게 해라.
+3. 조작은 초반 30초에는 친절하게 알려 주되, 게임이 진행될수록 숙련이 필요한 재미를 준다. 키보드는 방향키 또는 WASD 이동, Space 점프, Shift 대시/회피, J 또는 Z 능력 사용, K 또는 X 상호작용을 제공하고, 모바일에는 같은 기능의 큰 터치 버튼을 제공해라.
+4. 단순히 버튼을 누르는 게임이 아니라 점프 거리 조절, 대시 타이밍, 이동 중 능력 사용, 짧은 퍼즐 또는 적 회피 중 최소 두 가지를 조합한 도전을 넣어라. 실패는 빠르게 다시 시도할 수 있고, 항상 공정한 힌트를 보여 줘야 한다.
+5. HUD는 체력 또는 에너지, 목표, 수집 요소를 절제해 보여 주고, 보상·콤보·새 능력 해금 때에는 화면 연출과 소리 없는 시각 피드백을 넣어라.
 
 ## 이 게임의 주인공
 - 이름: ${character.name}
@@ -299,7 +323,7 @@ export default function Home() {
   const [celebrating, setCelebrating] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState("");
   const [badgeAward, setBadgeAward] = useState<(typeof badges)[number] | null>(null);
-  const [youngbinWelcome, setYoungbinWelcome] = useState(false);
+  const [welcomeCharacter, setWelcomeCharacter] = useState<Character | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
 
@@ -482,19 +506,40 @@ export default function Home() {
     }
   };
 
-  const beginYoungbinQuest = () => {
-    setYoungbinWelcome(false);
+  const welcomeScript = welcomeCharacter && ["goyoungbin", "dad", "mom"].includes(welcomeCharacter.id)
+    ? familyWelcomeScripts[welcomeCharacter.id as keyof typeof familyWelcomeScripts]
+    : null;
+
+  const speakYoungbinWelcome = () => {
+    if (!("speechSynthesis" in window)) {
+      toast("이 기기에서는 음성 읽기를 지원하지 않아. 인사말을 직접 읽어 봐!");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance("영빈아, 환영해! 번개 점프 마스터가 게임 공방의 주인공이 됐어. 오늘은 어떤 신나는 세계를 만들어 볼까?");
+    utterance.lang = "ko-KR";
+    utterance.rate = 1.02;
+    utterance.pitch = 1.12;
+    const koreanVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith("ko"));
+    if (koreanVoice) utterance.voice = koreanVoice;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const beginFamilyQuest = () => {
+    window.speechSynthesis?.cancel();
+    setWelcomeCharacter(null);
     setStage("questions");
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   };
 
   const startQuest = () => {
-    if (selectedCharacter === "goyoungbin") {
-      setYoungbinWelcome(true);
+    if (["goyoungbin", "dad", "mom"].includes(selectedCharacter)) {
+      setWelcomeCharacter(character);
       playCelebrationSound();
+      if (selectedCharacter === "goyoungbin") speakYoungbinWelcome();
       return;
     }
-    beginYoungbinQuest();
+    beginFamilyQuest();
   };
 
   const next = () => {
@@ -711,7 +756,7 @@ export default function Home() {
           </section>
         )}
       </main>
-      {youngbinWelcome && <div className="youngbin-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="youngbin-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> JUMP MASTER ARRIVAL</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" /><img src="https://gohwansok-max.github.io/pixel-quest-vibe-coding-workshop/assets/characters/goyoungbin-final.png" alt="고영빈" /><b>⚡</b></div><p className="youngbin-welcome-small">번개 점프 마스터가 입장했어!</p><h2 id="youngbin-welcome-title">영빈아, 환영해!</h2><p className="youngbin-welcome-copy">고영빈이 게임 공방의 주인공이 됐어.<br />오늘은 어떤 신나는 세계를 만들어 볼까?</p><button type="button" onClick={beginYoungbinQuest}><Zap size={20} fill="currentColor" /> 번개 점프, 출발!</button><small>버튼을 누르면 첫 번째 아이디어 카드가 열려.</small></section></div>}
+      {welcomeCharacter && welcomeScript && <div className={`youngbin-welcome-overlay welcome-${welcomeCharacter.id}`} style={{ "--welcome-accent": welcomeScript.accent, "--welcome-shadow": welcomeScript.shadow } as CSSProperties} role="dialog" aria-modal="true" aria-labelledby="family-welcome-title"><div className="youngbin-welcome-grid" aria-hidden="true" />{["✦", "⚡", "✦", "★", "⚡", "✦"].map((symbol, index) => <i key={`${symbol}-${index}`} className={`youngbin-spark spark-${index}`}>{symbol}</i>)}{welcomeCharacter.id === "dad" && <div className="dad-tool-burst" aria-hidden="true">{["⚙️", "🔧", "🛠️", "⚙️", "✨"].map((item, index) => <i key={`${item}-${index}`} className={`dad-tool tool-${index}`}>{item}</i>)}</div>}{welcomeCharacter.id === "mom" && <div className="mom-recipe-burst" aria-hidden="true">{["🍪", "💗", "✨", "🧁", "✦"].map((item, index) => <i key={`${item}-${index}`} className={`mom-recipe recipe-${index}`}>{item}</i>)}</div>}<section className="youngbin-welcome-card"><p className="youngbin-welcome-kicker"><Zap size={16} fill="currentColor" /> {welcomeScript.kicker}</p><div className="youngbin-arrival-frame"><span className="youngbin-arrival-ring" />{welcomeCharacter.image ? <img src={welcomeCharacter.image} alt={welcomeCharacter.name} /> : <strong>{welcomeCharacter.emoji}</strong>}<b>{welcomeCharacter.emoji}</b></div><p className="youngbin-welcome-small">{welcomeScript.small}</p><h2 id="family-welcome-title">{welcomeScript.heading}</h2><p className="youngbin-welcome-copy">{welcomeScript.copy.split("\n").map((line) => <span key={line}>{line}<br /></span>)}</p><div className="welcome-action-row"><button type="button" className="welcome-start-button" onClick={beginFamilyQuest}><Zap size={20} fill="currentColor" /> {welcomeScript.action}</button>{welcomeCharacter.id === "goyoungbin" && <button type="button" className="welcome-voice-button" onClick={speakYoungbinWelcome}><Volume2 size={18} /> 인사 다시 듣기</button>}</div><small>{welcomeCharacter.id === "goyoungbin" ? "친근한 한국어 음성이 인사말을 읽어 줘." : "버튼을 누르면 첫 번째 아이디어 카드가 열려."}</small></section></div>}
       {celebrating && <div className="celebration-overlay" role="status" onClick={() => setCelebrating(false)}><div className="celebration-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={piece.id} className="firework-piece" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<div className="celebration-card"><span>🎉</span><p>QUEST ACHIEVEMENT UNLOCKED</p><h2>정말 잘했어, {character.name}!</h2><b>{celebrationMessage}</b><small>화면을 누르면 폭죽을 닫을 수 있어.</small></div></div>}
       {badgeAward && <div className="badge-award-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-award-title"><div className="badge-award-rays" aria-hidden="true" />{fireworkPieces.map((piece) => <i key={`award-${piece.id}`} className="badge-award-spark" style={{ "--piece-x": `${piece.x}%`, "--piece-y": `${piece.y}%`, "--piece-size": `${piece.size + 3}px`, "--piece-delay": `${piece.delay}ms`, "--piece-color": piece.color } as CSSProperties} />)}<section className="badge-award-card" style={{ "--award-color": badgeAward.color } as CSSProperties}><span className="badge-award-kicker">NEW BADGE UNLOCKED</span><div className="giant-badge" aria-hidden="true"><span>{badgeAward.icon}</span></div><p>고영빈, 새로운 성취를 해냈어!</p><h2 id="badge-award-title">{badgeAward.title}</h2><b>{badgeAward.copy}</b><div><button type="button" onClick={() => { setBadgeAward(null); setBadgeOpen(true); }}><Medal size={18} /> 컬렉션 보기</button><button type="button" onClick={() => setBadgeAward(null)}>계속 만들기</button></div></section></div>}
       {badgeOpen && <div className="vault-overlay badge-overlay" role="dialog" aria-modal="true" aria-labelledby="badge-title"><section className="vault-panel badge-panel"><header><div><span className="eyebrow"><Medal size={15} /> ACHIEVEMENT CABINET</span><h2 id="badge-title">영빈이의 배지 컬렉션</h2><p>게임 주문서를 끝까지 만들 때마다 새로운 배지가 열려.</p></div><div className="badge-panel-actions"><button type="button" className="badge-share-button" onClick={shareBadgeCollection}><Share2 size={16} /> 카카오톡 공유</button><button type="button" onClick={() => setBadgeOpen(false)} aria-label="배지 컬렉션 닫기"><X size={21} /></button></div></header><div className="badge-progress"><span><b>{completedOrders}</b>개의 게임 주문서 완성</span><i><b style={{ width: `${Math.min(100, (completedOrders / 10) * 100)}%` }} /></i></div><div className="badge-grid">{badges.map((badge) => { const unlocked = completedOrders >= badge.target; return <article key={badge.id} className={unlocked ? "unlocked" : "locked"} style={{ "--badge-color": badge.color } as CSSProperties}><span>{unlocked ? badge.icon : "🔒"}</span><div><small>{unlocked ? "UNLOCKED" : `${badge.target}개 주문서 필요`}</small><b>{badge.title}</b><p>{badge.copy}</p></div></article>; })}</div></section></div>}
